@@ -218,9 +218,9 @@ def add_comment(project_id, task_id):
 @main_routes.route('/project/<int:project_id>', methods=['GET', 'POST'])
 @login_required
 def project_details(project_id):
-    project = Project.query.get_or_404(project_id)  # Получаем проект или 404, если не найдено
-    tasks = Task.query.filter_by(project_id=project_id).all()  # Получаем все задачи для проекта
-    comments = Comment.query.filter(Comment.task_id.in_([task.id for task in tasks])).all()  # Получаем комментарии для всех задач проекта
+    project = Project.query.get_or_404(project_id)  # Получаем проект
+    tasks = Task.query.filter_by(project_id=project_id).all()  # Получаем задачи проекта
+    comments = Comment.query.filter(Comment.task_id.in_([task.id for task in tasks])).all()  # Получаем комментарии
     users = User.query.all()  # Получаем всех пользователей
     statuses = TaskStatus.query.all()  # Получаем все статусы задач
 
@@ -231,8 +231,14 @@ def project_details(project_id):
         if 'file' in request.files:
             file = request.files['file']
             if file and allowed_file(file.filename):
-                filename = secure_filename(file.filename)  # Защищаем имя файла
-                file_path = os.path.join(current_app.root_path, UPLOAD_FOLDER, filename)
+                # Защищаем имя файла
+                filename = secure_filename(file.filename)
+
+                # Создаём директорию для проекта
+                project_path = create_project_directory(project_id)
+
+                # Сохраняем файл в директорию проекта
+                file_path = os.path.join(project_path, filename)
                 file.save(file_path)
                 flash(f'Файл "{filename}" успешно загружен.', 'success')
 

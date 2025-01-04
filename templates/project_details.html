@@ -26,6 +26,9 @@
     <!-- Отображение информации о проекте -->
     <h2 class="mt-4">Проект: {{ project.name }}</h2>
     <p>{{ project.description }}</p>
+    <p>Ответственный: {{ project.manager.full_name if project.manager else "Не назначен" }}</p>
+    <p>Дедлайн: {{ project.deadline if project.deadline else "Не установлен" }}</p>
+
 
     <h3>Задачи проекта</h3>
 

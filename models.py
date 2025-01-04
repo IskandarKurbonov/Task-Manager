@@ -5,18 +5,16 @@ from flask_login import UserMixin
 db = SQLAlchemy()
 
 # Таблица пользователей
-class User(UserMixin, db.Model):  # Наследуемся от UserMixin
+class User(db.Model):
     __tablename__ = 'users'
 
     id = db.Column(db.Integer, primary_key=True)
-    username = db.Column(db.String(50), unique=True, nullable=False)
-    password_hash = db.Column(db.String(255), nullable=False)
-    email = db.Column(db.String(100), unique=True, nullable=False)
-    full_name = db.Column(db.String(100))
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    full_name = db.Column(db.String(100), nullable=False)
+    email = db.Column(db.String(120), unique=True, nullable=False)
+    password_hash = db.Column(db.String(128), nullable=False)
 
-    # Связь с другими таблицами
-    projects = db.relationship('Project', backref='manager', lazy=True)
+    # Связь с проектами, где пользователь является менеджером
+    managed_projects = db.relationship('Project', back_populates='manager', lazy=True)
     tasks = db.relationship('Task', backref='assigned_user', lazy=True)
 
     @property
@@ -57,6 +55,7 @@ class Project(db.Model):
     # Связи
     tasks = db.relationship('Task', backref='project', lazy=True)
     participants = db.relationship('ProjectUser', backref='project', lazy=True)
+    manager = db.relationship('User', back_populates='managed_projects', lazy=True)
 
 # Таблица статусов задач
 class TaskStatus(db.Model):
