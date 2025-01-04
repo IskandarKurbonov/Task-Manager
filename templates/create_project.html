@@ -1,0 +1,34 @@
+{% extends "base.html" %}
+
+{% block title %}Создание проекта{% endblock %}
+
+{% block content %}
+<h2>Создание нового проекта</h2>
+<form method="POST">
+    <div class="form-group">
+        <label for="project_name">Название проекта</label>
+        <input type="text" class="form-control" id="project_name" name="project_name" required>
+    </div>
+    <div class="form-group">
+        <label for="description">Описание</label>
+        <textarea class="form-control" id="description" name="description" rows="4" required></textarea>
+    </div>
+    <div class="form-group">
+        <label for="status">Статус</label>
+        <select class="form-control" id="status" name="status_id" required>
+            {% for status in statuses %}
+                <option value="{{ status.id }}">{{ status.name }}</option>
+            {% endfor %}
+        </select>
+    </div>
+    <div class="form-group">
+        <label for="manager_id">Ответственный</label>
+        <select class="form-control" id="manager_id" name="manager_id" required>
+            {% for user in users %}
+                <option value="{{ user.id }}">{{ user.full_name }}</option>
+            {% endfor %}
+        </select>
+    </div>
+    <button type="submit" class="btn btn-primary">Создать проект</button>
+</form>
+{% endblock %}

@@ -1,0 +1,20 @@
+{% extends 'base.html' %}
+
+{% block title %}
+Проекты
+{% endblock %}
+
+{% block content %}
+<h1>Список проектов</h1>
+<ul>
+    {% for project in projects %}
+        <li>
+            {{ project.name }} — {{ project.description }}
+            <a href="{{ url_for('main_routes.project_details', project_id=project.id) }}">Подробнее</a> <!-- Ссылка на страницу с деталями проекта -->
+        </li>
+    {% else %}
+        <li>Проектов пока нет.</li>
+    {% endfor %}
+</ul>
+<a href="{{ url_for('main_routes.create_project') }}">Добавить новый проект</a>
+{% endblock %}

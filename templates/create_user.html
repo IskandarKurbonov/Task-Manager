@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+
+{% block title %}Создание пользователя{% endblock %}
+
+{% block content %}
+<h2>Создание нового пользователя</h2>
+<form method="POST">
+    <div class="form-group">
+        <label for="username">Имя пользователя</label>
+        <input type="text" class="form-control" id="username" name="username" required>
+    </div>
+    <div class="form-group">
+        <label for="password">Пароль</label>
+        <input type="password" class="form-control" id="password" name="password" required>
+    </div>
+    <div class="form-group">
+        <label for="email">Электронная почта</label>
+        <input type="email" class="form-control" id="email" name="email" required>
+    </div>
+    <button type="submit" class="btn btn-primary">Создать пользователя</button>
+</form>
+{% endblock %}

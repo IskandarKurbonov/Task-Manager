@@ -1,0 +1,144 @@
+{% extends 'base.html' %}
+
+{% block title %}Детали проекта - {{ project.name }}{% endblock %}
+
+{% block content %}
+    <!-- Иконка карандаша для редактирования проекта -->
+    <button type="button" id="edit-button" class="btn btn-warning">
+        <i class="fas fa-pencil-alt"></i> Редактировать проект
+    </button>
+
+    <!-- Форма для обновления проекта, скрытая по умолчанию -->
+    <div id="edit-form" style="display: none;">
+        <form method="POST">
+            <h2>Обновить проект: {{ project.name }}</h2>
+            <label for="project_name">Название проекта:</label>
+            <input type="text" name="project_name" value="{{ project.name }}" class="form-control" required />
+
+            <label for="description">Описание:</label>
+            <textarea name="description" class="form-control" required>{{ project.description }}</textarea>
+
+            <button type="submit" class="btn btn-success mt-3">Обновить проект</button>
+            <button type="button" id="cancel-button" class="btn btn-secondary mt-3">Отмена</button>
+        </form>
+    </div>
+
+    <!-- Отображение информации о проекте -->
+    <h2 class="mt-4">Проект: {{ project.name }}</h2>
+    <p>{{ project.description }}</p>
+
+    <h3>Задачи проекта</h3>
+
+    <!-- Форма для добавления задачи -->
+    <form method="POST">
+        <div class="form-group">
+            <input type="text" name="task_name" placeholder="Название задачи" class="form-control" required />
+        </div>
+        <div class="form-group">
+            <label for="assigned_to">Ответственный</label>
+            <select name="assigned_to" class="form-control" required>
+                <option value="">Выберите ответственного</option>
+                {% for user in users %}
+                    <option value="{{ user.id }}">{{ user.full_name }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="form-group">
+            <label for="status_id">Статус задачи</label>
+            <select name="status_id" class="form-control" required>
+                <option value="">Выберите статус</option>
+                {% for status in statuses %}
+                    <option value="{{ status.id }}">{{ status.name }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="form-group">
+            <label for="priority">Приоритет</label>
+            <select name="priority" class="form-control" required>
+                <option value="">Выберите приоритет</option>
+                <option value="1">Высокий</option>
+                <option value="2">Средний</option>
+                <option value="3">Низкий</option>
+            </select>
+        </div>
+        <div class="form-group">
+            <input type="date" name="deadline" placeholder="Дедлайн" class="form-control" required />
+        </div>
+        <button type="submit" class="btn btn-primary">Добавить задачу</button>
+    </form>
+
+    <!-- Форма для загрузки файла -->
+    <h3>Загрузить файл</h3>
+    <form method="POST" enctype="multipart/form-data">
+        <div class="form-group">
+            <input type="file" name="file" class="form-control" required />
+        </div>
+        <button type="submit" class="btn btn-success">Загрузить файл</button>
+    </form>
+
+    <h3>Загруженные файлы:</h3>
+    <ul>
+        {% for filename in os.listdir(project_files_path) %}
+            <li>
+                <a href="{{ url_for('main_routes.download_file', project_id=project.id, filename=filename) }}">
+                    {{ filename }}
+                </a>
+            </li>
+        {% endfor %}
+    </ul>
+
+    <ul class="mt-3">
+        {% for task in tasks %}
+            <li class="mb-3">
+                <strong>{{ task.title }}</strong> <!-- Название задачи -->
+                <p>Ответственный: {{ task.assigned_to.full_name }}</p> <!-- Имя ответственного -->
+                <p>Статус: {{ task.status.name }}</p> <!-- Статус задачи -->
+                <p>Приоритет:
+                    {% if task.priority == 1 %}
+                        Высокий
+                    {% elif task.priority == 2 %}
+                        Средний
+                    {% elif task.priority == 3 %}
+                        Низкий
+                    {% else %}
+                        Не установлен
+                    {% endif %}
+                </p>
+                <p>Дедлайн: {{ task.deadline }}</p>
+
+                <!-- Форма для добавления комментария к задаче -->
+                <form method="POST">
+                    <input type="hidden" name="task_id" value="{{ task.id }}" />
+                    <textarea name="content" placeholder="Комментарий" class="form-control mb-2"></textarea>
+                    <button type="submit" class="btn btn-info">Добавить комментарий</button>
+                </form>
+
+                <!-- Список комментариев для задачи -->
+                <ul class="mt-2">
+                    {% for comment in comments if comment.task_id == task.id %}
+                        <li>{{ comment.content }} - {{ comment.user.username }}</li>
+                    {% endfor %}
+                </ul>
+            </li>
+        {% endfor %}
+    </ul>
+
+    <script>
+        // Получаем элементы
+        const editButton = document.getElementById('edit-button');
+        const editForm = document.getElementById('edit-form');
+        const cancelButton = document.getElementById('cancel-button');
+
+        // Обработчик клика по кнопке "Редактировать проект"
+        editButton.addEventListener('click', function() {
+            editForm.style.display = 'block';  // Показываем форму
+            editButton.style.display = 'none'; // Прячем кнопку редактирования
+        });
+
+        // Обработчик клика по кнопке "Отмена"
+        cancelButton.addEventListener('click', function() {
+            editForm.style.display = 'none';  // Скрываем форму
+            editButton.style.display = 'inline-block'; // Показываем кнопку редактирования снова
+        });
+    </script>
+{% endblock %}
