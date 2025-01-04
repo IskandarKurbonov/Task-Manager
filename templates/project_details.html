@@ -94,17 +94,52 @@
         {% for task in tasks %}
             <li class="mb-3">
                 <strong>{{ task.title }}</strong> <!-- Название задачи -->
-                <p>Ответственный: {{ task.assigned_to.full_name }}</p> <!-- Имя ответственного -->
-                <p>Статус: {{ task.status.name }}</p> <!-- Статус задачи -->
+                <p>Ответственный: {{ task.assigned_user.full_name }}</p> <!-- Имя ответственного -->
+
+                <!-- Статус задачи с иконкой редактирования -->
+                <p>
+                    Статус:
+                    <span>{{ task.status.name }}</span>
+                    <button class="btn btn-link" data-toggle="modal" data-target="#editStatusModal{{ task.id }}">
+                        <i class="fas fa-pencil-alt"></i> <!-- Карандашик для редактирования -->
+                    </button>
+                </p>
+
+                <!-- Модальное окно для редактирования статуса -->
+                <div class="modal fade" id="editStatusModal{{ task.id }}" tabindex="-1" role="dialog" aria-labelledby="editStatusModalLabel{{ task.id }}" aria-hidden="true">
+                    <div class="modal-dialog" role="document">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h5 class="modal-title" id="editStatusModalLabel{{ task.id }}">Изменить статус</h5>
+                                <button type="button" class="close" data-dismiss="modal" aria-label="Закрыть">
+                                    <span aria-hidden="true">&times;</span>
+                                </button>
+                            </div>
+                            <div class="modal-body">
+                                <form method="POST">
+                                    <input type="hidden" name="task_id" value="{{ task.id }}" />
+                                    <div class="form-group">
+                                        <label for="status_id">Выберите новый статус:</label>
+                                        <select name="status_id" class="form-control">
+                                            {% for status in statuses %}
+                                                <option value="{{ status.id }}" {% if status.id == task.status.id %}selected{% endif %}>
+                                                    {{ status.name }}
+                                                </option>
+                                            {% endfor %}
+                                        </select>
+                                    </div>
+                                    <button type="submit" class="btn btn-primary">Сохранить изменения</button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
                 <p>Приоритет:
-                    {% if task.priority == 1 %}
-                        Высокий
-                    {% elif task.priority == 2 %}
-                        Средний
-                    {% elif task.priority == 3 %}
-                        Низкий
-                    {% else %}
-                        Не установлен
+                    {% if task.priority == 1 %} Высокий
+                    {% elif task.priority == 2 %} Средний
+                    {% elif task.priority == 3 %} Низкий
+                    {% else %} Не установлен
                     {% endif %}
                 </p>
                 <p>Дедлайн: {{ task.deadline }}</p>
@@ -119,7 +154,7 @@
                 <!-- Список комментариев для задачи -->
                 <ul class="mt-2">
                     {% for comment in comments if comment.task_id == task.id %}
-                        <li>{{ comment.content }} - {{ comment.user.username }}</li>
+                        <li>{{ comment.content }} - {{ comment.user.full_name }}</li> <!-- Имя автора комментария -->
                     {% endfor %}
                 </ul>
             </li>

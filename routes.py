@@ -153,18 +153,29 @@ def create_user():
 @main_routes.route('/projects/create', methods=['GET', 'POST'])
 @login_required
 def create_project():
-    if request.method == 'POST':
-        project_name = request.form['project_name']
-        description = request.form['description']
-        status_id = request.form['status_id']
-        manager_id = request.form['manager_id']
+    statuses = ProjectStatus.query.all()  # Получаем все статусы проектов
+    users = User.query.all()  # Получаем всех пользователей
 
-        # Создание нового проекта (например, добавление в базу данных)
+    if request.method == 'POST':
+        project_name = request.form.get('project_name')
+        description = request.form.get('description')
+        status_id = request.form.get('status_id')
+        manager_id = request.form.get('manager_id')
+        deadline = request.form.get('deadline')
+
+        # Преобразование строки в объект даты
+        try:
+            deadline = datetime.strptime(deadline, '%Y-%m-%d').date()
+        except ValueError:
+            flash('Некорректный формат даты дедлайна.', 'danger')
+            return redirect(url_for('main_routes.create_project'))
+
         new_project = Project(
             name=project_name,
             description=description,
             status_id=status_id,
-            manager_id=manager_id
+            manager_id=manager_id,
+            deadline=deadline
         )
         db.session.add(new_project)
         db.session.commit()
@@ -227,6 +238,17 @@ def project_details(project_id):
     project_files_path = os.path.join(current_app.root_path, 'projects', str(project.id))  # Путь к файлам проекта
 
     if request.method == 'POST':
+        # Обработка формы для изменения статуса задачи
+        if 'status_id' in request.form:
+            task_id = request.form.get('task_id')
+            status_id = request.form.get('status_id')
+            task = Task.query.get_or_404(task_id)
+            task.status_id = status_id  # Обновляем статус задачи
+            db.session.commit()
+            flash('Статус задачи обновлён.', 'success')
+            return redirect(url_for('main_routes.project_details', project_id=project_id))
+
+    if request.method == 'POST':
         # Загрузка файла
         if 'file' in request.files:
             file = request.files['file']
@@ -267,6 +289,9 @@ def project_details(project_id):
             db.session.commit()
             flash('Задача успешно добавлена.', 'success')
 
+            # После добавления задачи перенаправляем обратно на страницу с GET-запросом
+            return redirect(url_for('main_routes.project_details', project_id=project_id))
+
         # Обработка формы для добавления комментария
         elif 'content' in request.form:
             content = request.form.get('content')
@@ -275,6 +300,9 @@ def project_details(project_id):
             db.session.add(new_comment)
             db.session.commit()
             flash('Комментарий успешно добавлен.', 'success')
+
+            # После добавления комментария перенаправляем обратно на страницу с GET-запросом
+            return redirect(url_for('main_routes.project_details', project_id=project_id))
 
     # Передаем os в шаблон
     return render_template(
