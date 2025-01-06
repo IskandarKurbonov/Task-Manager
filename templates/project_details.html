@@ -33,9 +33,9 @@
     <h3>Задачи проекта</h3>
 
     <!-- Форма для добавления задачи -->
-    <form method="POST">
+    <form method="POST" action="{{ url_for('main_routes.create_task', project_id=project.id) }}">
         <div class="form-group">
-            <input type="text" name="task_name" placeholder="Название задачи" class="form-control" required />
+            <input type="text" name="title" placeholder="Название задачи" class="form-control" required />
         </div>
         <div class="form-group">
             <label for="assigned_to">Ответственный</label>
@@ -69,6 +69,7 @@
         </div>
         <button type="submit" class="btn btn-primary">Добавить задачу</button>
     </form>
+
 
     <!-- Форма для загрузки файла -->
     <h3>Загрузить файл</h3>
@@ -154,7 +155,7 @@
                 <!-- Список комментариев для задачи -->
                 <ul class="mt-2">
                     {% for comment in comments if comment.task_id == task.id %}
-                        <li>{{ comment.content }} - {{ comment.user.full_name }}</li> <!-- Имя автора комментария -->
+                        <li>{{ comment.user.full_name }}: {{ comment.content }}</li> <!-- Имя автора комментария -->
                     {% endfor %}
                 </ul>
             </li>

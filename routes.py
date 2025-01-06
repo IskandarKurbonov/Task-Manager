@@ -188,28 +188,42 @@ def create_project():
     users = User.query.all()  # Получаем всех пользователей для выбора ответственного
     return render_template('create_project.html', statuses=statuses, users=users)
 
-
 # Маршрут для создания задачи
 @main_routes.route('/project/<int:project_id>/create_task', methods=['GET', 'POST'])
 @login_required
 def create_task(project_id):
-    project = Project.query.get_or_404(project_id)
-    if request.method == 'POST':
-        task_name = request.form.get('task_name')
-        assigned_to = request.form.get('assigned_to')
-        deadline = request.form.get('deadline')
+    task_title = request.form.get('title')
+    task_description = request.form.get('description')
+    status_id = request.form.get('status_id')
+    priority = request.form.get('priority', 1)
+    assigned_to = request.form.get('assigned_to')
+    deadline = request.form.get('deadline')
 
+    if not task_title:
+        flash('Название задачи обязательно.', 'danger')
+        return redirect(url_for('main_routes.project_details', project_id=project_id))
+
+    try:
         new_task = Task(
-            name=task_name,
+            title=task_title,
+            description=task_description,
             project_id=project_id,
+            status_id=status_id,
+            priority=priority,
             assigned_to=assigned_to,
-            deadline=datetime.strptime(deadline, '%Y-%m-%d')
+            deadline=datetime.strptime(deadline, '%Y-%m-%d') if deadline else None
         )
         db.session.add(new_task)
         db.session.commit()
-        flash('Задача успешно создана.', 'success')
-        return redirect(url_for('main_routes.project_details', project_id=project_id))
-    return render_template('create_task.html', project=project)
+        flash('Задача успешно создана!', 'success')
+    except Exception as e:
+        db.session.rollback()
+        print(f"Ошибка: {e}")
+        flash('При создании задачи возникла ошибка.', 'danger')
+
+    return redirect(url_for('main_routes.project_details', project_id=project_id))
+
+
 
 
 # Маршрут для добавления комментария
@@ -241,37 +255,58 @@ def project_details(project_id):
         # Обработка формы для изменения статуса задачи
         if 'status_id' in request.form:
             task_id = request.form.get('task_id')
-            status_id = request.form.get('status_id')
+            status_id = int(request.form.get('status_id'))  # Преобразуем в int
             task = Task.query.get_or_404(task_id)
             task.status_id = status_id  # Обновляем статус задачи
             db.session.commit()
             flash('Статус задачи обновлён.', 'success')
             return redirect(url_for('main_routes.project_details', project_id=project_id))
 
-    if request.method == 'POST':
         # Загрузка файла
-        if 'file' in request.files:
+        elif 'file' in request.files:
             file = request.files['file']
-            if file and allowed_file(file.filename):
-                # Защищаем имя файла
-                filename = secure_filename(file.filename)
+            if not file or file.filename == '':  # Проверка, что файл выбран
+                flash('Файл не выбран.', 'danger')
+                return redirect(url_for('main_routes.project_details', project_id=project_id))
+            if not allowed_file(file.filename):  # Проверка формата файла
+                flash('Недопустимый формат файла.', 'danger')
+                return redirect(url_for('main_routes.project_details', project_id=project_id))
 
-                # Создаём директорию для проекта
-                project_path = create_project_directory(project_id)
+            filename = secure_filename(file.filename)
+            project_path = create_project_directory(project_id)
+            file_path = os.path.join(project_path, filename)
+            file.save(file_path)
+            flash(f'Файл "{filename}" успешно загружен.', 'success')
 
-                # Сохраняем файл в директорию проекта
-                file_path = os.path.join(project_path, filename)
-                file.save(file_path)
-                flash(f'Файл "{filename}" успешно загружен.', 'success')
-
-        # Обработка формы для обновления проекта
+        # Обновление проекта
         elif 'project_name' in request.form:
-            project.name = request.form.get('project_name')
-            project.description = request.form.get('description')
+            project_name = request.form.get('project_name')
+            description = request.form.get('description')
+            status_id = int(request.form.get('status_id'))  # Преобразуем в int
+            manager_id = int(request.form.get('manager_id'))  # Преобразуем в int
+            deadline = request.form.get('deadline')
+
+            # Проверка обязательных полей
+            if not project_name or not status_id or not manager_id or not deadline:
+                flash('Все поля должны быть заполнены.', 'danger')
+                return redirect(url_for('main_routes.project_details', project_id=project_id))
+
+            # Преобразование строки в объект даты
+            try:
+                deadline = datetime.strptime(deadline, '%Y-%m-%d').date()
+            except ValueError:
+                flash('Некорректный формат даты дедлайна.', 'danger')
+                return redirect(url_for('main_routes.project_details', project_id=project_id))
+
+            project.name = project_name
+            project.description = description
+            project.status_id = status_id
+            project.manager_id = manager_id
+            project.deadline = deadline
             db.session.commit()
             flash('Проект успешно обновлён.', 'success')
 
-        # Обработка формы для добавления задачи
+        # Добавление задачи
         elif 'task_name' in request.form:
             task_name = request.form.get('task_name')
             assigned_to = request.form.get('assigned_to')
@@ -292,7 +327,7 @@ def project_details(project_id):
             # После добавления задачи перенаправляем обратно на страницу с GET-запросом
             return redirect(url_for('main_routes.project_details', project_id=project_id))
 
-        # Обработка формы для добавления комментария
+        # Добавление комментария
         elif 'content' in request.form:
             content = request.form.get('content')
             task_id = request.form.get('task_id')
@@ -301,10 +336,8 @@ def project_details(project_id):
             db.session.commit()
             flash('Комментарий успешно добавлен.', 'success')
 
-            # После добавления комментария перенаправляем обратно на страницу с GET-запросом
-            return redirect(url_for('main_routes.project_details', project_id=project_id))
+        return redirect(url_for('main_routes.project_details', project_id=project_id))
 
-    # Передаем os в шаблон
     return render_template(
         'project_details.html',
         project=project,
@@ -315,6 +348,7 @@ def project_details(project_id):
         project_files_path=project_files_path,
         os=os  # Передаем модуль os в шаблон
     )
+
 
 # Маршрут для редактирования проекта
 @main_routes.route('/project/<int:project_id>/edit', methods=['GET', 'POST'])
@@ -392,6 +426,11 @@ def user_settings():
 @main_routes.route('/projects', methods=['GET'])
 @login_required
 def projects():
-    projects = Project.query.all()  # Получение всех проектов из базы данных
-    return render_template('projects.html', projects=projects)
+    try:
+        projects = Project.query.all()  # Получение всех проектов из базы данных
+        return render_template('projects.html', projects=projects)
+    except Exception as e:
+        flash(f'Произошла ошибка при загрузке проектов: {str(e)}', 'danger')
+        return redirect(url_for('main_routes.index'))
+
 

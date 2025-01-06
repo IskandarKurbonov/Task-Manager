@@ -6,15 +6,47 @@
 
 {% block content %}
 <h1>Список проектов</h1>
-<ul>
+
+<div class="row">
     {% for project in projects %}
-        <li>
-            {{ project.name }} — {{ project.description }}
-            <a href="{{ url_for('main_routes.project_details', project_id=project.id) }}">Подробнее</a> <!-- Ссылка на страницу с деталями проекта -->
-        </li>
+        <div class="col-md-4 mb-4">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">{{ project.name }}</h5>
+                    <p class="card-text"><strong>Ответственный:</strong> {{ project.manager.full_name }}</p>  <!-- Ответственный за проект -->
+                    <p class="card-text"><strong>Дедлайн:</strong> {{ project.deadline }}</p>
+
+                    <!-- Кнопки на одном уровне -->
+                    <div class="d-flex justify-content-between">
+                        <button class="btn btn-info btn-sm" type="button" data-toggle="collapse" data-target="#tasks{{ project.id }}" aria-expanded="false" aria-controls="tasks{{ project.id }}">
+                            Задачи проекта
+                        </button>
+                        <a href="{{ url_for('main_routes.project_details', project_id=project.id) }}" class="btn btn-primary btn-sm">Подробнее</a>
+                    </div>
+
+                    <!-- Задачи проекта -->
+                    <div class="collapse" id="tasks{{ project.id }}">
+                        <ul class="list-group mt-2">
+                            {% for task in project.tasks %}
+                                <li class="list-group-item">
+                                    <strong>Задача:</strong> {{ task.title }} <br>
+                                    <small><strong>Ответственный:</strong> {{ task.assigned_user.full_name }}</small><br>  <!-- Ответственный за задачу -->
+                                    <small><strong>Дедлайн:</strong> {{ task.deadline }}</small>
+                                </li>
+                            {% else %}
+                                <li class="list-group-item">Задач нет.</li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+
+                </div>
+            </div>
+        </div>
     {% else %}
-        <li>Проектов пока нет.</li>
+        <p>Проектов пока нет.</p>
     {% endfor %}
-</ul>
-<a href="{{ url_for('main_routes.create_project') }}">Добавить новый проект</a>
+</div>
+
+<a href="{{ url_for('main_routes.create_project') }}" class="btn btn-success w-100 mt-4" style="margin-bottom: 10px;">Добавить новый проект</a>
+
 {% endblock %}
