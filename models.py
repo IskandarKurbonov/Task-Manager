@@ -60,6 +60,8 @@ class Project(db.Model):
     tasks = db.relationship('Task', backref='project', lazy=True)
     participants = db.relationship('ProjectUser', backref='project', lazy=True)
     manager = db.relationship('User', back_populates='managed_projects', lazy=True)
+    status = db.relationship('ProjectStatus', backref='projects', lazy='joined')  # Добавляем связь с таблицей project_statuses
+
 
 # Таблица статусов задач
 class TaskStatus(db.Model):

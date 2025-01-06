@@ -1,4 +1,4 @@
-import hashlib
+import hashlib, unicodedata
 from flask_login import login_user, logout_user
 import os
 from flask import Blueprint, render_template, request, redirect, url_for, flash, current_app, send_from_directory
@@ -86,7 +86,7 @@ def create_project_directory(project_id):
 @main_routes.route('/project/<int:project_id>/upload_file', methods=['POST'])
 @login_required
 def upload_file(project_id):
-    project = Project.query.get_or_404(project_id)
+    project = Project.query.get_or_404(project_id)  # Получаем проект
 
     # Проверка, есть ли файл в запросе
     if 'file' not in request.files:
@@ -105,15 +105,22 @@ def upload_file(project_id):
         flash('Недопустимый формат файла.', 'danger')
         return redirect(url_for('main_routes.project_details', project_id=project_id))
 
+    # Получаем оригинальное имя файла
+    filename = file.filename
+
     # Создаём директорию для проекта, если её нет
     project_path = create_project_directory(project_id)
 
-    # Защищаем имя файла и сохраняем его в директории проекта
-    filename = secure_filename(file.filename)
+    # Создаём путь для сохранения файла
     file_path = os.path.join(project_path, filename)
-    file.save(file_path)
 
-    flash('Файл успешно загружен.', 'success')
+    # Сохраняем файл
+    try:
+        file.save(file_path)
+        flash(f'Файл "{filename}" успешно загружен.', 'success')
+    except Exception as e:
+        flash(f'Ошибка при загрузке файла: {str(e)}', 'danger')
+
     return redirect(url_for('main_routes.project_details', project_id=project_id))
 
 
@@ -427,7 +434,10 @@ def user_settings():
 @login_required
 def projects():
     try:
-        projects = Project.query.all()  # Получение всех проектов из базы данных
+        # Загрузка всех проектов с задачами и статусами (для оптимизации)
+        projects = Project.query.options(
+            joinedload(Project.tasks).joinedload(Task.status)
+        ).all()
         return render_template('projects.html', projects=projects)
     except Exception as e:
         flash(f'Произошла ошибка при загрузке проектов: {str(e)}', 'danger')
