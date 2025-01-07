@@ -5,7 +5,7 @@
 {% endblock %}
 
 {% block content %}
-<h1>Список проектов</h1>
+<h1>Проекты</h1>
 
 <!-- Кнопка для добавления нового проекта -->
 <div class="d-flex justify-content-end mb-4">
@@ -14,28 +14,40 @@
     </a>
 </div>
 
-<!-- Ссылка на страницу профиля -->
-<div class="d-flex justify-content-end mb-4">
-    <a href="{{ url_for('main_routes.profile_settings') }}" class="btn btn-secondary">
-        <i class="fas fa-user-circle"></i> Редактировать профиль
-    </a>
-</div>
-
 <div class="row">
     {% for project in projects %}
         <div class="col-md-4 mb-4">
-            <div class="card">
-                <div class="card-body">
+            <div class="card" style="min-height: 400px; border-radius: 10px;"> <!-- Уменьшена высота карточки -->
+                <div class="card-body d-flex flex-column">
                     <h5 class="card-title">{{ project.name }}</h5>
-                    <p class="card-text"><strong>Ответственный:</strong> {{ project.manager.full_name }}</p>
-                    <p class="card-text"><strong>Дедлайн:</strong> {{ project.deadline }}</p>
+                    <div style="flex-grow: 1;"> <!-- Flex-grow для равномерного распределения пространства -->
+                        <p class="card-text">
+                            <!-- Фотография менеджера проекта с подсказкой -->
+                            <div style="display: flex; align-items: center;">
+                                <img src="{{ project.manager.profile_picture if project.manager.profile_picture else url_for('static', filename='default_profile_picture.jpg') }}"
+                                     alt="Профиль"
+                                     style="width: 40px; height: 40px; object-fit: cover; margin-right: 10px; border-radius: 50%;"
+                                     title="{{ project.manager.full_name }}">
+                                <div>
+                                    <strong>{{ project.manager.full_name }}</strong><br>
+                                    <small>Ответственный за проект</small>
+                                </div>
+                            </div>
+                        </p>
+                        <p class="card-text"><strong>Дата начала:</strong> {{ project.created_at.strftime('%Y-%m-%d') }}</p> <!-- Дата начала проекта -->
+                        <p class="card-text"><strong>Дедлайн:</strong> {{ project.deadline }}</p>
+                        <p class="card-text mb-1"><strong>Статус:</strong> {{ project.status.name }}</p> <!-- Уменьшен отступ -->
+                    </div>
 
                     <!-- Прогресс выполнения -->
-                    <div class="mb-3">
+                    <div>
                         {% set total_tasks = project.tasks|length %}
                         {% set completed_tasks = project.tasks|selectattr('status.name', 'equalto', 'Done')|list|length %}
                         {% set progress = (completed_tasks / total_tasks * 100) if total_tasks > 0 else 0 %}
-                        <p><strong>Прогресс:</strong> {{ progress|round(0) }}%</p>
+                        <div class="d-flex align-items-center">
+                            <p class="mb-1"><strong>Прогресс:</strong></p>
+                            <span class="ms-2">{{ progress|round(0) }}%</span>
+                        </div>
                         <div class="progress">
                             <div
                                 class="progress-bar bg-success"
@@ -50,27 +62,49 @@
                     </div>
 
                     <!-- Кнопки -->
-                    <div class="d-flex justify-content-between">
-                        <button class="btn btn-info btn-sm" type="button" data-toggle="collapse" data-target="#tasks{{ project.id }}" aria-expanded="false" aria-controls="tasks{{ project.id }}">
+                    <div class="d-flex justify-content-between mt-2"> <!-- Уменьшен отступ сверху -->
+                        <button class="btn btn-info btn-sm" type="button" data-toggle="modal" data-target="#tasksModal{{ project.id }}">
                             Задачи проекта
                         </button>
                         <a href="{{ url_for('main_routes.project_details', project_id=project.id) }}" class="btn btn-primary btn-sm">Подробнее</a>
                     </div>
 
-                    <!-- Задачи проекта -->
-                    <div class="collapse" id="tasks{{ project.id }}">
-                        <ul class="list-group mt-2">
-                            {% for task in project.tasks %}
-                                <li class="list-group-item">
-                                    <strong>Задача:</strong> {{ task.title }} <br>
-                                    <small><strong>Ответственный:</strong> {{ task.assigned_user.full_name }}</small><br>
-                                    <small><strong>Статус:</strong> {{ task.status.name }}</small><br>
-                                    <small><strong>Дедлайн:</strong> {{ task.deadline }}</small>
-                                </li>
-                            {% else %}
-                                <li class="list-group-item">Задач нет.</li>
-                            {% endfor %}
-                        </ul>
+                    <!-- Модальное окно с задачами проекта -->
+                    <div class="modal fade" id="tasksModal{{ project.id }}" tabindex="-1" role="dialog" aria-labelledby="tasksModalLabel{{ project.id }}" aria-hidden="true">
+                        <div class="modal-dialog" role="document">
+                            <div class="modal-content">
+                                <div class="modal-header">
+                                    <h5 class="modal-title" id="tasksModalLabel{{ project.id }}">Задачи проекта: {{ project.name }}</h5>
+                                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                        <span aria-hidden="true">&times;</span>
+                                    </button>
+                                </div>
+                                <div class="modal-body">
+                                    <ul class="list-group">
+                                        {% for task in project.tasks %}
+                                            <li class="list-group-item">
+                                                <strong>Задача:</strong> {{ task.title }} <br>
+                                                <small><strong>Ответственный: </strong>
+                                                    <!-- Профильная фотография ответственного за задачу с подсказкой -->
+                                                    <img src="{{ task.assigned_user.profile_picture if task.assigned_user.profile_picture else url_for('static', filename='default_profile_picture.jpg') }}"
+                                                         alt="Профиль"
+                                                         style="width: 20px; height: 20px; object-fit: cover; margin-right: 5px; border-radius: 50%; vertical-align: middle;"
+                                                         title="{{ task.assigned_user.full_name }}">
+                                                </small>
+                                                <small>{{ project.manager.full_name }}</small><br>
+                                                <small><strong>Статус:</strong> {{ task.status.name }}</small><br>
+                                                <small><strong>Дедлайн:</strong> {{ task.deadline }}</small>
+                                            </li>
+                                        {% else %}
+                                            <li class="list-group-item">Задач нет.</li>
+                                        {% endfor %}
+                                    </ul>
+                                </div>
+                                <div class="modal-footer">
+                                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Закрыть</button>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>

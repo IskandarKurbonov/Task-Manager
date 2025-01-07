@@ -112,7 +112,11 @@
         {% for task in tasks %}
             <li class="list-group-item">
                 <h5>{{ task.title }}</h5>
-                <p><strong>Ответственный:</strong> {{ task.assigned_user.full_name }}</p>
+                <p><strong>Ответственный:</strong>
+                    <!-- Профильная фотография пользователя -->
+                    <img src="{{ task.assigned_user.profile_picture if task.assigned_user.profile_picture else url_for('static', filename='default_profile_picture.jpg') }}" alt="Профиль" style="width: 40px; height: 40px; object-fit: cover; margin-right: 10px; border-radius: 50%; vertical-align: middle;">
+                    {{ task.assigned_user.full_name }}
+                </p>
                 <p><strong>Статус:</strong>
                     {{ task.status.name }}
                     <button class="btn btn-link p-0" data-toggle="modal" data-target="#editStatusModal{{ task.id }}">
@@ -142,6 +146,8 @@
                                     {% for comment in comments if comment.task_id == task.id %}
                                         <div class="chat-message mb-3">
                                             <div class="message-header">
+                                                <!-- Профильная фотография автора комментария -->
+                                                <img src="{{ comment.user.profile_picture if comment.user.profile_picture else url_for('static', filename='default_profile_picture.jpg') }}" alt="Профиль" style="width: 30px; height: 30px; object-fit: cover; margin-right: 5px; border-radius: 50%; vertical-align: middle;">
                                                 <strong>{{ comment.user.full_name }}</strong>
                                                 <span class="message-time text-muted ml-2">{{ comment.created_at.strftime('%Y-%m-%d %H:%M') }}</span>
                                             </div>
@@ -149,7 +155,38 @@
                                                 {{ comment.content }}
                                             </div>
                                         </div>
-                                    <!-- Стили для оформления чата -->
+                                    {% else %}
+                                        <p>Комментариев нет.</p>
+                                    {% endfor %}
+                                </div>
+                            </div>
+
+                            <!-- Форма добавления комментария -->
+                            <div class="add-comment-form mt-4">
+                                <h4>Написать комментарий:</h4>
+                                <form method="POST" action="{{ url_for('main_routes.project_details', project_id=project.id) }}">
+                                    <input type="hidden" name="task_id" value="{{ task.id }}">
+                                    <input type="hidden" name="project_id" value="{{ project.id }}">
+
+                                    <div class="form-group">
+                                        <label for="content">Ваш комментарий:</label>
+                                        <textarea name="content" class="form-control" rows="4" required></textarea>
+                                    </div>
+
+                                    <button type="submit" class="btn btn-primary mt-2">Отправить</button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </li>
+        {% else %}
+            <li class="list-group-item text-muted">Задач нет.</li>
+        {% endfor %}
+    </ul>
+
+
+                        <!-- Стили для оформления чата -->
                                     <style>
                                         .chat-box {
                                             max-height: 400px;
@@ -183,34 +220,6 @@
                                             box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
                                         }
                                     </style>
-
-                                    {% endfor %}
-                                </div>
-                            </div>
-
-                            <!-- Форма добавления комментария -->
-                            <div class="add-comment-form mt-4">
-                                <h4>Написать комментарий:</h4>
-                                <form method="POST" action="{{ url_for('main_routes.project_details', project_id=project.id) }}">
-                                    <input type="hidden" name="task_id" value="{{ task.id }}">
-                                    <input type="hidden" name="project_id" value="{{ project.id }}">
-
-                                    <div class="form-group">
-                                        <label for="content">Ваш комментарий:</label>
-                                        <textarea name="content" class="form-control" rows="4" required></textarea>
-                                    </div>
-
-                                    <button type="submit" class="btn btn-primary mt-2">Отправить</button>
-                                </form>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </li>
-        {% else %}
-            <li class="list-group-item text-muted">Задач нет.</li>
-        {% endfor %}
-    </ul>
 
     <!-- Форма добавления задачи -->
     <button class="btn btn-primary mb-3" type="button" data-toggle="collapse" data-target="#addTaskForm" aria-expanded="false">

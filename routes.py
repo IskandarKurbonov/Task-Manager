@@ -415,8 +415,17 @@ def change_password():
         new_password = request.form.get('new_password')
         confirm_password = request.form.get('confirm_password')
 
-        # Хэшируем старый пароль для сравнения
+        # Проверяем, что все поля заполнены
+        if not old_password or not new_password or not confirm_password:
+            flash('Все поля обязательны для заполнения.', 'danger')
+            return redirect(url_for('main_routes.change_password'))
+
+        # Хэшируем старый пароль с использованием sha256
         old_password_hash = hashlib.sha256(old_password.encode('utf-8')).hexdigest()
+
+        # Логирование старого пароля
+        print(f"Old password hash (from input): {old_password_hash}")
+        print(f"Stored password hash (in DB): {current_user.password_hash}")
 
         # Проверка старого пароля
         if old_password_hash != current_user.password_hash:
@@ -436,10 +445,11 @@ def change_password():
         # Хэшируем новый пароль
         new_password_hash = hashlib.sha256(new_password.encode('utf-8')).hexdigest()
 
+        # Логирование нового пароля
+        print(f"New password hash (to store): {new_password_hash}")
+
         # Обновляем пароль в базе данных
         current_user.password_hash = new_password_hash
-
-        # Обновляем запись в базе данных
         db.session.commit()
 
         flash('Пароль успешно изменен.', 'success')
