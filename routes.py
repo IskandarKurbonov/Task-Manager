@@ -1,4 +1,4 @@
-import hashlib, unicodedata
+import hashlib
 from flask_login import login_user, logout_user
 import os
 from flask import Blueprint, render_template, request, redirect, url_for, flash, current_app, send_from_directory
@@ -7,14 +7,16 @@ from models import *
 from werkzeug.utils import secure_filename
 from datetime import datetime
 from sqlalchemy.orm import joinedload
+from werkzeug.security import generate_password_hash, check_password_hash
+from PIL import Image, ImageDraw, ImageOps
 
 auth_routes = Blueprint('auth_routes', __name__)
 main_routes = Blueprint('main_routes', __name__)
 
 UPLOAD_FOLDER = 'projects'  # Папка для загрузки файлов
+USER_PROFILE_FOLDER = 'static/users_profile'  # Папка для загрузки фотографии пользователей
 ALLOWED_EXTENSIONS = {'txt', 'pdf', 'png', 'jpg', 'jpeg', 'gif'}
-
-# Убедитесь, что эта папка существует
+os.makedirs(USER_PROFILE_FOLDER, exist_ok=True)
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
 def allowed_file(filename):
@@ -73,6 +75,12 @@ if not os.path.exists(UPLOAD_FOLDER):
     os.makedirs(UPLOAD_FOLDER)
 
 
+@main_routes.route('/users_profile/<user_id>/<filename>')
+def send_user_profile_image(user_id, filename):
+    user_folder = os.path.join(USER_PROFILE_FOLDER, user_id)
+    return send_from_directory(user_folder, filename)
+
+
 # Создание директории для проекта
 def create_project_directory(project_id):
     """Создаёт директорию для проекта, если она не существует."""
@@ -86,42 +94,42 @@ def create_project_directory(project_id):
 @main_routes.route('/project/<int:project_id>/upload_file', methods=['POST'])
 @login_required
 def upload_file(project_id):
-    project = Project.query.get_or_404(project_id)  # Получаем проект
+    project = Project.query.get_or_404(project_id)  # Проверяем наличие проекта
 
-    # Проверка, есть ли файл в запросе
+    # Проверка на наличие файла
     if 'file' not in request.files:
         flash('Файл не выбран.', 'danger')
         return redirect(url_for('main_routes.project_details', project_id=project_id))
 
     file = request.files['file']
 
-    # Проверка, был ли файл выбран
-    if file.filename == '':
+    # Проверяем, был ли файл выбран
+    if not file or file.filename.strip() == '':
         flash('Файл не выбран.', 'danger')
         return redirect(url_for('main_routes.project_details', project_id=project_id))
 
-    # Проверяем, что файл разрешён
-    if not allowed_file(file.filename):
-        flash('Недопустимый формат файла.', 'danger')
+    # Получаем имя файла напрямую
+    filename = file.filename.strip()
+
+    # Если имя файла некорректное, выводим ошибку
+    if not filename or filename == "-":
+        flash('Некорректное имя файла.', 'danger')
         return redirect(url_for('main_routes.project_details', project_id=project_id))
 
-    # Получаем оригинальное имя файла
-    filename = file.filename
-
     # Создаём директорию для проекта, если её нет
-    project_path = create_project_directory(project_id)
+    project_path = os.path.join(UPLOAD_FOLDER, str(project_id))
+    os.makedirs(project_path, exist_ok=True)
 
-    # Создаём путь для сохранения файла
+    # Сохраняем файл без модификации имени
     file_path = os.path.join(project_path, filename)
-
-    # Сохраняем файл
     try:
         file.save(file_path)
         flash(f'Файл "{filename}" успешно загружен.', 'success')
     except Exception as e:
-        flash(f'Ошибка при загрузке файла: {str(e)}', 'danger')
+        flash(f'Ошибка при сохранении файла: {str(e)}', 'danger')
 
     return redirect(url_for('main_routes.project_details', project_id=project_id))
+
 
 
 # Маршрут для скачивания файла
@@ -398,36 +406,96 @@ def edit_task(project_id, task_id):
     return render_template('edit_task.html', task=task)
 
 
-# Маршрут для страницы настроек пользователя
-@main_routes.route('/user/settings', methods=['GET', 'POST'])
+# Изменение пароли
+@main_routes.route('/change_password', methods=['GET', 'POST'])
 @login_required
-def user_settings():
+def change_password():
     if request.method == 'POST':
-        current_password = request.form.get('current_password')
+        old_password = request.form.get('old_password')
         new_password = request.form.get('new_password')
         confirm_password = request.form.get('confirm_password')
 
-        # Проверка текущего пароля
-        if not verify_password(current_user.password_hash, current_password):
-            flash('Неверный текущий пароль.', 'danger')
-            return redirect(url_for('main_routes.user_settings'))
+        # Проверка старого пароля
+        if not check_password_hash(current_user.password_hash, old_password):
+            flash('Неверный старый пароль.', 'danger')
+            return redirect(url_for('main_routes.change_password'))
 
-        # Проверка совпадения нового пароля и его подтверждения
+        # Проверка, что новый пароль совпадает с подтверждением
         if new_password != confirm_password:
             flash('Новый пароль и подтверждение пароля не совпадают.', 'danger')
-            return redirect(url_for('main_routes.user_settings'))
+            return redirect(url_for('main_routes.change_password'))
 
-        # Хэширование нового пароля
-        hashed_new_password = hash_password(new_password)
+        # Проверка длины нового пароля (например, минимум 8 символов)
+        if len(new_password) < 8:
+            flash('Пароль должен быть не менее 8 символов.', 'danger')
+            return redirect(url_for('main_routes.change_password'))
 
-        # Обновление пароля пользователя в базе данных
-        current_user.password_hash = hashed_new_password
+        # Хэшируем новый пароль
+        hashed_password = generate_password_hash(new_password)
+
+        # Обновляем пароль в базе данных
+        current_user.password_hash = hashed_password
         db.session.commit()
 
-        flash('Пароль успешно изменён.', 'success')
+        flash('Пароль успешно изменен.', 'success')
         return redirect(url_for('main_routes.index'))
 
-    return render_template('user_settings.html')
+    return render_template('change_password.html')
+
+
+# Маршрут для загрузки и изменения фото профиля
+@main_routes.route('/profile_settings', methods=['GET', 'POST'])
+@login_required
+def profile_settings():
+    if request.method == 'POST':
+        # Проверяем, был ли файл загружен
+        if 'profile_picture' in request.files:
+            file = request.files['profile_picture']
+
+            if file and allowed_file(file.filename):  # Проверка на разрешенные форматы
+                filename = secure_filename(file.filename)
+
+                # Создаем папку для пользователя, если ее нет
+                user_folder = os.path.join(USER_PROFILE_FOLDER, str(current_user.id))
+                os.makedirs(user_folder, exist_ok=True)
+
+                # Путь для сохранения файла
+                file_path = os.path.join(user_folder, filename)
+                file.save(file_path)
+
+                # Обработка фотографии (если нужно)
+                try:
+                    # Открываем изображение с помощью PIL
+                    image = Image.open(file_path).convert("RGBA")
+                    size = (200, 200)  # Размеры для обрезки
+                    mask = Image.new("L", size, 0)
+                    draw = ImageDraw.Draw(mask)
+                    draw.ellipse((0, 0) + size, fill=255)
+                    output = ImageOps.fit(image, size, centering=(0.5, 0.5))
+                    output.putalpha(mask)
+
+                    # Путь для сохранения обрезанной фотографии
+                    rounded_path = os.path.join(user_folder, f"rounded_{filename}")
+                    output.save(rounded_path, format="PNG")
+
+                    # Обновление данных пользователя с новой фотографией
+                    current_user.profile_picture = f"/users_profile/{current_user.id}/rounded_{filename}"
+                    db.session.commit()
+
+                    flash('Фотография успешно загружена и обработана.', 'success')
+                except Exception as e:
+                    flash(f'Ошибка обработки фотографии: {str(e)}', 'danger')
+            else:
+                flash('Некорректный формат файла для фотографии.', 'danger')
+
+    # Передача данных в шаблон
+    user_data = {
+        "username": current_user.username,
+        "full_name": current_user.full_name,
+        "email": current_user.email,
+        "profile_picture": current_user.profile_picture if current_user.profile_picture else None
+    }
+    return render_template('profile_settings.html', user=user_data)
 
 
 @main_routes.route('/projects', methods=['GET'])
