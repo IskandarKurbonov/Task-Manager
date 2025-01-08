@@ -2,7 +2,7 @@ import logging
 from flask import Flask
 from flask_login import LoginManager, current_user
 from config import Config
-from models import db, User, ProjectStatus, TaskStatus
+from models import db, User, ProjectStatus, TaskStatus, Role, Task
 from datetime import datetime
 
 # Создание приложения Flask
@@ -28,6 +28,7 @@ def load_user(user_id):
 def create_app():
     with app.app_context():
         db.create_all()  # Создание всех таблиц
+        initialize_roles()  # Инициализация ролей
         initialize_project_statuses()  # Инициализация статусов проектов
         initialize_task_statuses()  # Инициализация статусов задач
 
@@ -37,9 +38,19 @@ def create_app():
 
     return app
 
+# Инициализация ролей
+def initialize_roles():
+    roles = ['admin', 'manager', 'user']
+    for role_name in roles:
+        existing_role = Role.query.filter_by(name=role_name).first()
+        if not existing_role:
+            new_role = Role(name=role_name)
+            db.session.add(new_role)
+    db.session.commit()
+
 # Инициализация статусов проектов
 def initialize_project_statuses():
-    project_statuses = ['Not Started', 'In Progress', 'Completed', 'On Hold']
+    project_statuses = ['Не начат', 'В процессе', 'Выполнено']
     for status in project_statuses:
         existing_status = ProjectStatus.query.filter_by(name=status).first()
         if not existing_status:
@@ -49,7 +60,7 @@ def initialize_project_statuses():
 
 # Инициализация статусов задач
 def initialize_task_statuses():
-    task_statuses = ['To Do', 'In Progress', 'Done', 'Blocked']
+    task_statuses = ['Назначен', 'В процессе', 'Выполнено']
     for status in task_statuses:
         existing_status = TaskStatus.query.filter_by(name=status).first()
         if not existing_status:
@@ -57,12 +68,14 @@ def initialize_task_statuses():
             db.session.add(new_status)
     db.session.commit()
 
+
 # Хук перед запросом
 @app.before_request
 def before_request():
     if current_user.is_authenticated:
         db.session.add(current_user)
         db.session.commit()
+
 
 if __name__ == '__main__':
 

@@ -6,11 +6,21 @@
   <component name="ChangeListManager">
     <list default="true" id="702d8c3b-0538-43ed-8f1f-7fced534c4fb" name="Changes" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app.py" beforeDir="false" afterPath="$PROJECT_DIR$/app.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/config.py" beforeDir="false" afterPath="$PROJECT_DIR$/config.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/models.py" beforeDir="false" afterPath="$PROJECT_DIR$/models.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/routes.py" beforeDir="false" afterPath="$PROJECT_DIR$/routes.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/static/styles/styles.css" beforeDir="false" afterPath="$PROJECT_DIR$/static/styles/styles.css" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/static/default_profile_picture.jpg" beforeDir="false" afterPath="$PROJECT_DIR$/static/users_profile/default_profile_picture.jpg" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/static/logo.png" beforeDir="false" afterPath="$PROJECT_DIR$/static/styles/logo.png" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/static/users_profile/5/photo_2022-12-23_20-10-40.jpg" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/static/users_profile/5/photos.jpg" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/static/users_profile/5/rounded_photo_2022-12-23_20-10-40.jpg" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/static/users_profile/5/rounded_photos.jpg" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/static/users_profile/6/photo_2024-01-07_17-08-07.jpg" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/static/users_profile/6/rounded_photo_2024-01-07_17-08-07.jpg" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/templates/base.html" beforeDir="false" afterPath="$PROJECT_DIR$/templates/base.html" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/templates/projects.html" beforeDir="false" afterPath="$PROJECT_DIR$/templates/projects.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/templates/create_project.html" beforeDir="false" afterPath="$PROJECT_DIR$/templates/create_project.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/templates/profile_settings.html" beforeDir="false" afterPath="$PROJECT_DIR$/templates/profile_settings.html" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -39,23 +49,25 @@
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent">{
-  &quot;keyToString&quot;: {
-    &quot;DefaultHtmlFileTemplate&quot;: &quot;HTML File&quot;,
-    &quot;Python.app.executor&quot;: &quot;Run&quot;,
-    &quot;Python.routes.executor&quot;: &quot;Run&quot;,
-    &quot;RunOnceActivity.OpenProjectViewOnStart&quot;: &quot;true&quot;,
-    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
-    &quot;git-widget-placeholder&quot;: &quot;feature/add-models&quot;,
-    &quot;last_opened_file_path&quot;: &quot;C:/Users/Admin/OOP/Task-Manager/static&quot;
+  <component name="PropertiesComponent"><![CDATA[{
+  "keyToString": {
+    "DefaultHtmlFileTemplate": "HTML File",
+    "Python.app.executor": "Run",
+    "Python.routes.executor": "Run",
+    "RunOnceActivity.OpenProjectViewOnStart": "true",
+    "RunOnceActivity.ShowReadmeOnStart": "true",
+    "git-widget-placeholder": "feature/new-version",
+    "last_opened_file_path": "C:/Users/Admin/OOP/Task-Manager/static"
   }
-}</component>
+}]]></component>
   <component name="RecentsManager">
     <key name="CopyFile.RECENT_KEYS">
       <recent name="C:\Users\Admin\OOP\Task-Manager\static" />
       <recent name="C:\Users\Admin\OOP\Task-Manager\users_profile\1" />
     </key>
     <key name="MoveFile.RECENT_KEYS">
+      <recent name="C:\Users\Admin\OOP\Task-Manager\static\styles" />
+      <recent name="C:\Users\Admin\OOP\Task-Manager\static\users_profile" />
       <recent name="C:\Users\Admin\OOP\Task-Manager\static" />
       <recent name="C:\Users\Admin\OOP\Task-Manager\projects\3" />
       <recent name="C:\Users\Admin\OOP\Task-Manager\projects\2" />

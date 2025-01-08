@@ -32,7 +32,6 @@ body.dark-mode .user-name {
     color: #90ee90; /* Светло-зеленый для темной темы */
 }
 
-
 /* Темная тема */
 body.dark-mode {
     background-color: #343a40;
@@ -159,12 +158,62 @@ body.dark-mode .progress-bar {
     display: inline-block;
 }
 
-/* Анимация */
-@keyframes wave-animation {
-    0% {
-        background-position: 0 0;
-    }
-    100% {
-        background-position: 100% 0;
-    }
+/* Стили для кнопок */
+.btn {
+    border-radius: 5px;
+    font-size: 0.9rem;
+    padding: 5px 10px;
+    transition: all 0.2s ease-in-out;
+}
+
+.btn:hover {
+    transform: scale(1.05);
+}
+
+/* Карточки задач */
+.task-card {
+    border: 1px solid #dee2e6;
+    border-radius: 8px;
+    margin-bottom: 15px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    padding: 15px;
+    transition: transform 0.2s ease-in-out;
+}
+
+.task-card:hover {
+    transform: scale(1.02);
+}
+
+/* Чат комментариев */
+.comment-section {
+    border-top: 1px solid #dee2e6;
+    margin-top: 20px;
+    padding-top: 10px;
+}
+
+.comment {
+    display: flex;
+    flex-direction: column;
+    margin-bottom: 10px;
+}
+
+.comment .author {
+    font-weight: bold;
+    font-size: 0.95rem;
+}
+
+.comment .time {
+    font-size: 0.8rem;
+    color: #6c757d;
+}
+
+.comment .content {
+    margin-top: 5px;
+    font-size: 0.9rem;
+}
+
+.comment-form textarea {
+    border-radius: 8px;
+    font-size: 0.9rem;
+    resize: none;
 }

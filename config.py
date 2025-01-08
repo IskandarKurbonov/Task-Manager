@@ -4,7 +4,7 @@ class Config:
     # URI для подключения к базе данных PostgreSQL
     SQLALCHEMY_DATABASE_URI = os.getenv(
         'DATABASE_URL',
-        'postgresql://administrator:Z2xGhJ8RdsAq84X1ysKp9vCk@172.16.25.252/tasks'
+        'postgresql://administrator:Z2xGhJ8RdsAq84X1ysKp9vCk@172.16.25.252/task'
     )
     # Отключение трекинга модификаций объектов SQLAlchemy (оптимизация)
     SQLALCHEMY_TRACK_MODIFICATIONS = False

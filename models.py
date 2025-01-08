@@ -110,6 +110,18 @@ class Task(db.Model):
     assigned_users = db.relationship('TaskUser', back_populates='task', lazy=True)
     subtasks = db.relationship('Subtask', backref='parent_task', lazy=True)
 
+
+# Таблица статусов задач
+class TaskStatus(db.Model):
+    __tablename__ = 'task_statuses'
+
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(50), unique=True, nullable=False)
+
+    tasks = db.relationship('Task', backref='status', lazy=True)
+    subtasks = db.relationship('Subtask', backref='status', lazy=True)
+
+
 # Таблица подзадач
 class Subtask(db.Model):
     __tablename__ = 'subtasks'
