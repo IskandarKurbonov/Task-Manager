@@ -7,7 +7,6 @@ from models import *
 from werkzeug.utils import secure_filename
 from datetime import datetime
 from sqlalchemy.orm import joinedload
-from werkzeug.security import generate_password_hash, check_password_hash
 from PIL import Image, ImageDraw, ImageOps
 
 auth_routes = Blueprint('auth_routes', __name__)
@@ -19,28 +18,33 @@ ALLOWED_EXTENSIONS = {'txt', 'pdf', 'png', 'jpg', 'jpeg', 'gif'}
 os.makedirs(USER_PROFILE_FOLDER, exist_ok=True)
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
+
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+
 
 # Функции для хэширования и проверки пароля
 def hash_password(password):
     return hashlib.sha256(password.encode('utf-8')).hexdigest()
 
+
 def verify_password(stored_password_hash, provided_password):
     return stored_password_hash == hashlib.sha256(provided_password.encode('utf-8')).hexdigest()
+
 
 @auth_routes.route('/')
 def index():
     # Если пользователь не авторизован, перенаправляем на страницу логина
     if not current_user.is_authenticated:
         return redirect(url_for('auth_routes.login'))
-    return redirect(url_for('main_routes.index'))
+    # Перенаправляем на /projects для авторизованных пользователей
+    return redirect(url_for('main_routes.projects'))
 
 
-@main_routes.route('/index')
-@login_required
-def index():
-    return render_template('index.html')  # Ваша основная страница
+# @main_routes.route('/index')
+# @login_required
+# def index():
+#     return redirect(url_for('main_routes.projects'))  # Перенаправляем на /projects
 
 
 # Маршрут для входа
@@ -253,6 +257,16 @@ def add_comment(project_id, task_id):
     db.session.commit()
     flash('Комментарий успешно добавлен.', 'success')
     return redirect(url_for('main_routes.project_details', project_id=project_id))
+
+
+@main_routes.route('/update_task_status/<int:task_id>', methods=['POST'])
+def update_task_status(task_id):
+    # Здесь должна быть логика для обновления статуса задачи
+    task = Task.query.get(task_id)
+    status_id = request.form['status_id']
+    task.status_id = status_id
+    db.session.commit()
+    return redirect(url_for('main_routes.project_details', project_id=task.project_id))
 
 
 @main_routes.route('/project/<int:project_id>', methods=['GET', 'POST'])
@@ -517,13 +531,15 @@ def profile_settings():
 @login_required
 def projects():
     try:
-        # Загрузка всех проектов с задачами и статусами (для оптимизации)
         projects = Project.query.options(
             joinedload(Project.tasks).joinedload(Task.status)
         ).all()
+        print(f"Projects loaded: {[project.name for project in projects]}")
         return render_template('projects.html', projects=projects)
     except Exception as e:
+        print(f"Error loading projects: {e}")
         flash(f'Произошла ошибка при загрузке проектов: {str(e)}', 'danger')
-        return redirect(url_for('main_routes.index'))
+        return render_template('projects.html')
+
 
 

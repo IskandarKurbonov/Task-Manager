@@ -58,54 +58,6 @@
         </div>
     </div>
 
-
-    <!-- Стили для улучшения поля выбора файла -->
-    <style>
-        .custom-file-label::after {
-            content: "Выберите файл...";
-        }
-        .custom-file-input:lang(en)~.custom-file-label::after {
-            content: "Выберите файл...";
-        }
-        .custom-file {
-            position: relative;
-            width: 100%;
-        }
-        .custom-file-input {
-            position: absolute;
-            z-index: 1;
-            width: 100%;
-            height: calc(2.25rem + 2px);
-            opacity: 0;
-        }
-        .custom-file-label {
-            display: block;
-            width: 100%;
-            padding: 0.375rem 0.75rem;
-            height: calc(2.25rem + 2px);
-            background-color: #f8f9fa;
-            border: 1px solid #ced4da;
-            border-radius: 0.25rem;
-            cursor: pointer;
-        }
-        .custom-file-input:focus~.custom-file-label {
-            border-color: #80bdff;
-            outline: 0;
-            box-shadow: 0 0 0 0.2rem rgba(38, 143, 255, 0.25);
-        }
-    </style>
-
-    <!-- Скрипт для отображения имени выбранного файла -->
-    <script>
-        // Когда файл выбран, обновляется текст метки
-        document.getElementById("file").addEventListener("change", function(event) {
-            var fileName = event.target.files[0].name;
-            var label = event.target.nextElementSibling;
-            label.innerText = fileName; // Обновление текста на имя файла
-        });
-    </script>
-
-
     <!-- Список задач -->
     <h3 class="mt-4">Задачи проекта</h3>
     <ul class="list-group mb-4">
@@ -113,7 +65,6 @@
             <li class="list-group-item">
                 <h5>{{ task.title }}</h5>
                 <p><strong>Ответственный:</strong>
-                    <!-- Профильная фотография пользователя -->
                     <img src="{{ task.assigned_user.profile_picture if task.assigned_user.profile_picture else url_for('static', filename='default_profile_picture.jpg') }}" alt="Профиль" style="width: 40px; height: 40px; object-fit: cover; margin-right: 10px; border-radius: 50%; vertical-align: middle;">
                     {{ task.assigned_user.full_name }}
                 </p>
@@ -131,51 +82,34 @@
                 </p>
                 <p><strong>Дедлайн:</strong> {{ task.deadline }}</p>
 
-                <!-- Спойлер для описания задачи и комментариев -->
-                <button class="btn btn-info" type="button" data-toggle="collapse" data-target="#taskDetails{{ task.id }}" aria-expanded="false" aria-controls="taskDetails{{ task.id }}">
-                    Подробнее
-                </button>
-
-                <div class="collapse" id="taskDetails{{ task.id }}">
-                    <div class="card mt-3">
-                        <div class="card-body">
-                            <!-- Список комментариев для задачи -->
-                            <div class="chat-section mt-4">
-                                <h4>Комментарии:</h4>
-                                <div class="chat-box mt-3">
-                                    {% for comment in comments if comment.task_id == task.id %}
-                                        <div class="chat-message mb-3">
-                                            <div class="message-header">
-                                                <!-- Профильная фотография автора комментария -->
-                                                <img src="{{ comment.user.profile_picture if comment.user.profile_picture else url_for('static', filename='default_profile_picture.jpg') }}" alt="Профиль" style="width: 30px; height: 30px; object-fit: cover; margin-right: 5px; border-radius: 50%; vertical-align: middle;">
-                                                <strong>{{ comment.user.full_name }}</strong>
-                                                <span class="message-time text-muted ml-2">{{ comment.created_at.strftime('%Y-%m-%d %H:%M') }}</span>
-                                            </div>
-                                            <div class="message-content bg-light p-2 rounded">
-                                                {{ comment.content }}
-                                            </div>
-                                        </div>
-                                    {% else %}
-                                        <p>Комментариев нет.</p>
-                                    {% endfor %}
-                                </div>
+                <!-- Модальное окно для редактирования статуса задачи -->
+                <div class="modal fade" id="editStatusModal{{ task.id }}" tabindex="-1" role="dialog" aria-labelledby="editStatusModalLabel{{ task.id }}" aria-hidden="true">
+                    <div class="modal-dialog" role="document">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h5 class="modal-title" id="editStatusModalLabel{{ task.id }}">Изменить статус задачи</h5>
+                                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                    <span aria-hidden="true">&times;</span>
+                                </button>
                             </div>
-
-                            <!-- Форма добавления комментария -->
-                            <div class="add-comment-form mt-4">
-                                <h4>Написать комментарий:</h4>
-                                <form method="POST" action="{{ url_for('main_routes.project_details', project_id=project.id) }}">
-                                    <input type="hidden" name="task_id" value="{{ task.id }}">
-                                    <input type="hidden" name="project_id" value="{{ project.id }}">
-
+                            <form method="POST" action="{{ url_for('main_routes.update_task_status', task_id=task.id) }}">
+                                <div class="modal-body">
                                     <div class="form-group">
-                                        <label for="content">Ваш комментарий:</label>
-                                        <textarea name="content" class="form-control" rows="4" required></textarea>
+                                        <label for="status">Выберите статус</label>
+                                        <select name="status_id" class="form-control" required>
+                                            {% for status in statuses %}
+                                                <option value="{{ status.id }}" {% if task.status.id == status.id %} selected {% endif %}>
+                                                    {{ status.name }}
+                                                </option>
+                                            {% endfor %}
+                                        </select>
                                     </div>
-
-                                    <button type="submit" class="btn btn-primary mt-2">Отправить</button>
-                                </form>
-                            </div>
+                                </div>
+                                <div class="modal-footer">
+                                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Закрыть</button>
+                                    <button type="submit" class="btn btn-primary">Сохранить изменения</button>
+                                </div>
+                            </form>
                         </div>
                     </div>
                 </div>
@@ -185,41 +119,6 @@
         {% endfor %}
     </ul>
 
-
-                        <!-- Стили для оформления чата -->
-                                    <style>
-                                        .chat-box {
-                                            max-height: 400px;
-                                            overflow-y: auto;
-                                            padding: 10px;
-                                            background-color: #f9f9f9;
-                                            border-radius: 10px;
-                                            border: 1px solid #e0e0e0;
-                                        }
-                                        .chat-message {
-                                            background-color: #fff;
-                                            border-radius: 10px;
-                                            padding: 10px;
-                                            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-                                        }
-                                        .message-header {
-                                            font-size: 14px;
-                                            color: #333;
-                                        }
-                                        .message-content {
-                                            margin-top: 5px;
-                                            font-size: 16px;
-                                        }
-                                        .message-time {
-                                            font-size: 12px;
-                                        }
-                                        .add-comment-form {
-                                            background-color: #fafafa;
-                                            padding: 15px;
-                                            border-radius: 10px;
-                                            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-                                        }
-                                    </style>
 
     <!-- Форма добавления задачи -->
     <button class="btn btn-primary mb-3" type="button" data-toggle="collapse" data-target="#addTaskForm" aria-expanded="false">
@@ -263,10 +162,9 @@
                     <label for="deadline">Дедлайн</label>
                     <input type="date" name="deadline" class="form-control" required />
                 </div>
-                <button type="submit" class="btn btn-success">Добавить задачу</button>
+                <button type="submit" class="btn btn-primary">Создать задачу</button>
             </form>
         </div>
     </div>
-
 </div>
 {% endblock %}

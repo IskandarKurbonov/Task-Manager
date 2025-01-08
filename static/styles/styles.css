@@ -1,0 +1,72 @@
+/* Общие стили */
+body {
+    background-color: #f8f9fa;
+    font-family: 'Roboto', sans-serif;
+    padding-top: 80px; /* Учитываем фиксированную навигационную панель */
+    transition: background-color 0.3s, color 0.3s;
+}
+
+.navbar {
+    height: 70px;
+}
+
+.navbar img {
+    max-height: 50px;
+}
+
+/* Карточки проектов */
+.card {
+    border-radius: 10px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    transition: transform 0.2s ease-in-out;
+}
+
+.card:hover {
+    transform: scale(1.02);
+}
+
+.card-title {
+    font-size: 1.2rem;
+    font-weight: bold;
+}
+
+.card-text {
+    font-size: 0.95rem;
+    line-height: 1.5;
+}
+
+/* Дата и дедлайн */
+.date-icon {
+    color: #007bff;
+}
+
+.deadline-icon {
+    color: #dc3545;
+}
+
+/* Имена пользователей */
+.user-name {
+    color: #28a745;
+    font-weight: bold;
+}
+
+/* Прогресс выполнения */
+.progress-bar {
+    transition: width 0.3s;
+}
+
+/* Темная тема */
+body.dark-mode {
+    background-color: #343a40;
+    color: #f8f9fa;
+}
+
+body.dark-mode .card {
+    background-color: #495057;
+    color: #f8f9fa;
+}
+
+body.dark-mode .navbar {
+    background-color: #212529;
+    color: #f8f9fa;
+}
