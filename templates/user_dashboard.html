@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+
+{% block title %}Панель пользователя{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <h1 class="text-center mb-4">Моя Панель</h1>
+    <div class="row">
+        <!-- Мои задачи -->
+        <div class="col-md-6">
+            <div class="card shadow-sm">
+                <div class="card-body text-center">
+                    <h5 class="card-title text-primary"><i class="fas fa-tasks"></i> Мои задачи</h5>
+                    <p class="card-text text-muted">Список задач, которые назначены вам.</p>
+                    <a href="{{ url_for('main_routes.user_tasks') }}" class="btn btn-primary btn-block">
+                        <i class="fas fa-eye"></i> Просмотр задач
+                    </a>
+                </div>
+            </div>
+        </div>
+        <!-- Участие в проектах -->
+        <div class="col-md-6">
+            <div class="card shadow-sm">
+                <div class="card-body text-center">
+                    <h5 class="card-title text-success"><i class="fas fa-project-diagram"></i> Проекты</h5>
+                    <p class="card-text text-muted">Информация о проектах, в которых вы участвуете.</p>
+                    <a href="{{ url_for('main_routes.projects') }}" class="btn btn-success btn-block">
+                        <i class="fas fa-folder-open"></i> Просмотр проектов
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

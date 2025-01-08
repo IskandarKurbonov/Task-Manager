@@ -1,48 +1,67 @@
 {% extends "base.html" %}
 
-{% block title %}Создание пользователя{% endblock %}
+{% block title %}Создание проекта{% endblock %}
 
 {% block content %}
-<h2 class="mb-4">Создание нового пользователя</h2>
-<form method="POST">
-    <div class="row">
-        <div class="col-md-6">
-            <div class="form-group">
-                <label for="username">Имя пользователя</label>
-                <input type="text" class="form-control form-control-sm" id="username" name="username" required>
+<div class="container mt-5">
+    <h2 class="text-center mb-4">Создание нового проекта</h2>
+    <form method="POST" enctype="multipart/form-data" class="p-4 rounded shadow-sm mx-auto" style="max-width: 650px;">
+        <div class="row g-3">
+            <div class="col-12">
+                <div class="form-group">
+                    <label for="project_name" class="form-label">Название проекта</label>
+                    <input type="text" class="form-control" id="project_name" name="project_name" placeholder="Введите название проекта" required>
+                </div>
             </div>
-            <div class="form-group">
-                <label for="password">Пароль</label>
-                <input type="password" class="form-control form-control-sm" id="password" name="password" required>
+            <div class="col-12">
+                <div class="form-group">
+                    <label for="deadline" class="form-label">Дедлайн</label>
+                    <input type="date" class="form-control" id="deadline" name="deadline" required>
+                </div>
             </div>
-            <div class="form-group">
-                <label for="email">Электронная почта</label>
-                <input type="email" class="form-control form-control-sm" id="email" name="email" required>
+            <div class="col-12">
+                <div class="form-group">
+                    <label for="manager_id" class="form-label">Ответственный</label>
+                    <select class="form-control" id="manager_id" name="manager_id" required>
+                        <option value="">Выберите ответственного</option>
+                        {% for user in users %}
+                            <option value="{{ user.id }}">{{ user.full_name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+            <div class="col-12">
+                <div class="form-group">
+                    <label for="status" class="form-label">Статус</label>
+                    <select class="form-control" id="status" name="status_id" required>
+                        <option value="">Выберите статус</option>
+                        {% for status in statuses %}
+                            <option value="{{ status.id }}">{{ status.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+            <div class="col-12">
+                <div class="form-group">
+                    <label for="description" class="form-label">Описание</label>
+                    <textarea class="form-control" id="description" name="description" rows="2" placeholder="Введите краткое описание проекта" required></textarea>
+                </div>
+            </div>
+            <div class="col-12">
+                <div class="form-group">
+                    <label for="project_file" class="form-label">Файл проекта</label>
+                    <div class="custom-file">
+                        <input type="file" class="custom-file-input" id="project_file" name="project_file" accept=".pdf,.doc,.docx,.txt,.xlsx,.png,.jpg">
+                        <label class="custom-file-label" for="project_file">Выберите файл...</label>
+                    </div>
+                </div>
             </div>
         </div>
-        <div class="col-md-6">
-            <div class="form-group">
-                <label for="role_id">Роль</label>
-                <select class="form-control form-control-sm" id="role_id" name="role_id" required>
-                    {% for role in roles %}
-                        <option value="{{ role.id }}">{{ role.name }}</option>
-                    {% endfor %}
-                </select>
-            </div>
-            <div class="form-group">
-                <label for="phone_number">Телефон</label>
-                <input type="text" class="form-control form-control-sm" id="phone_number" name="phone_number">
-            </div>
-            <div class="form-group">
-                <label for="department_id">Отдел</label>
-                <select class="form-control form-control-sm" id="department_id" name="department_id">
-                    {% for department in departments %}
-                        <option value="{{ department.id }}">{{ department.name }}</option>
-                    {% endfor %}
-                </select>
-            </div>
+        <div class="text-center mt-4">
+            <button type="submit" class="btn btn-success btn-lg px-4">
+                <i class="fas fa-cloud-upload-alt"></i> Создать проект
+            </button>
         </div>
-    </div>
-    <button type="submit" class="btn btn-primary btn-sm mt-3">Создать пользователя</button>
-</form>
+    </form>
+</div>
 {% endblock %}

@@ -137,6 +137,7 @@ class Subtask(db.Model):
 
     status = db.relationship('TaskStatus', back_populates='subtasks', lazy=True)
     parent_task = db.relationship('Task', back_populates='subtasks', lazy=True)
+    assigned_users = db.relationship('SubtaskUser', back_populates='subtask', lazy=True)
 
 # Промежуточная таблица для подзадач и пользователей
 class SubtaskUser(db.Model):

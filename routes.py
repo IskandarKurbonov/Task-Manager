@@ -17,6 +17,10 @@ USER_FOLDER = 'static/users'  # Папка для данных пользова�
 os.makedirs(USER_FOLDER, exist_ok=True)
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
+@auth_routes.route('/')
+def root():
+    return redirect(url_for('auth_routes.login'))
+
 # Декоратор для проверки роли администратора
 def admin_required(func):
     @wraps(func)
@@ -81,19 +85,16 @@ def logout():
     return redirect(url_for('auth_routes.login'))
 
 # Панель администратора
-@main_routes.route('/admin', methods=['GET'])
+@main_routes.route('/admin', methods=['GET', 'POST'])
 @login_required
 @admin_required
 def admin_dashboard():
-    return render_template('admin_dashboard.html')
+    roles = Role.query.all()
+    departments = Department.query.all()
+    statuses = ProjectStatus.query.all()
+    managers = User.query.filter_by(role_id=2).all()  # Role "Manager"
+    return render_template('admin_dashboard.html', roles=roles, departments=departments, statuses=statuses, managers=managers)
 
-# Панель менеджера
-@main_routes.route('/manager', methods=['GET'])
-@login_required
-@manager_required
-def manager_dashboard():
-    projects = Project.query.filter_by(manager_id=current_user.id).all()
-    return render_template('manager_dashboard.html', projects=projects)
 
 # Панель пользователя
 @main_routes.route('/user', methods=['GET'])
@@ -104,47 +105,81 @@ def user_dashboard():
     return render_template('user_dashboard.html', projects=projects)
 
 # Создание пользователя
-@main_routes.route('/admin/users/create', methods=['GET', 'POST'])
+@main_routes.route('/admin/users/create', methods=['POST'])
 @login_required
 @admin_required
 def create_user():
+    username = request.form.get('username')
+    full_name = request.form.get('full_name')  # Обязательное поле
+    email = request.form.get('email')
+    password = request.form.get('password')
+    role_id = request.form.get('role_id')
+    department_id = request.form.get('department_id')
+
+    # Проверка обязательных полей
+    if not (username and full_name and email and password and role_id and department_id):
+        return {"success": False, "message": "Все обязательные поля должны быть заполнены."}, 400
+
+    # Хеширование пароля
+    password_hash = hash_password(password)
+
+    # Создание нового пользователя
+    new_user = User(
+        username=username,
+        full_name=full_name,
+        email=email,
+        password_hash=password_hash,
+        role_id=role_id,
+        department_id=department_id
+    )
+    db.session.add(new_user)
+    db.session.commit()
+
+    # Создание папки для пользователя
+    user_folder = os.path.join(USER_FOLDER, str(new_user.id))
+    os.makedirs(os.path.join(user_folder, 'profile'), exist_ok=True)
+
+    return {"success": True, "message": "Пользователь успешно добавлен."}, 200
+
+
+# Создание проекта менеджером
+@main_routes.route('/manager/projects/create', methods=['GET', 'POST'])
+@login_required
+@manager_required
+def create_project_manager():
+    statuses = ProjectStatus.query.all()
     if request.method == 'POST':
-        username = request.form.get('username')
-        full_name = request.form.get('full_name')
-        email = request.form.get('email')
-        password = request.form.get('password')
-        position = request.form.get('position')
-        phone_number = request.form.get('phone_number')
-        role_id = request.form.get('role_id')
-        department_id = request.form.get('department_id')
+        project_name = request.form.get('project_name')
+        description = request.form.get('description')
+        status_id = request.form.get('status_id')
+        deadline = request.form.get('deadline')
 
-        if not (username and full_name and email and password):
-            flash('Все поля обязательны.', 'danger')
-            return redirect(url_for('main_routes.create_user'))
+        try:
+            deadline = datetime.strptime(deadline, '%Y-%m-%d').date()
+        except ValueError:
+            flash('Некорректный формат даты дедлайна.', 'danger')
+            return redirect(url_for('main_routes.create_project_manager'))
 
-        password_hash = hash_password(password)
-        new_user = User(
-            username=username,
-            full_name=full_name,
-            email=email,
-            password_hash=password_hash,
-            position=position,
-            phone_number=phone_number,
-            role_id=role_id,
-            department_id=department_id
+        # Создание проекта с текущим менеджером как ответственным
+        new_project = Project(
+            name=project_name,
+            description=description,
+            status_id=status_id,
+            manager_id=current_user.id,
+            deadline=deadline
         )
-        db.session.add(new_user)
+        db.session.add(new_project)
         db.session.commit()
 
-        # Создание папки для пользователя
-        user_folder = os.path.join(USER_FOLDER, str(new_user.id))
-        os.makedirs(os.path.join(user_folder, 'profile'), exist_ok=True)
+        # Создание папки для проекта
+        project_folder = os.path.join(UPLOAD_FOLDER, str(new_project.id))
+        os.makedirs(project_folder, exist_ok=True)
 
-        flash('Пользователь успешно создан.', 'success')
-        return redirect(url_for('main_routes.admin_dashboard'))
-    roles = Role.query.all()
-    departments = Department.query.all()
-    return render_template('create_user.html', roles=roles, departments=departments)
+        flash('Проект успешно создан.', 'success')
+        return redirect(url_for('main_routes.manager_dashboard'))
+
+    return render_template('create_project.html', statuses=statuses)
+
 
 # Создание проекта администратором
 @main_routes.route('/admin/projects/create', methods=['GET', 'POST'])
@@ -341,3 +376,117 @@ def remove_assigned_user(task_id, user_id):
     else:
         flash('Пользователь не найден среди ответственных.', 'danger')
     return redirect(url_for('main_routes.project_details', project_id=task.project_id))
+
+
+@main_routes.route('/profile/settings', methods=['GET', 'POST'])
+@login_required
+def profile_settings():
+    user = current_user
+    if request.method == 'POST':
+        # Проверка типа формы (загрузка фото или обновление данных)
+        if request.form.get('form_type') == 'profile_picture':
+            # Обработка загрузки фотографии профиля
+            if 'profile_picture' not in request.files:
+                flash('Файл не выбран.', 'danger')
+                return redirect(url_for('main_routes.profile_settings'))
+
+            file = request.files['profile_picture']
+            if file.filename == '':
+                flash('Файл не выбран.', 'danger')
+                return redirect(url_for('main_routes.profile_settings'))
+
+            # Проверка формата файла
+            if not file.filename.lower().endswith(('png', 'jpg', 'jpeg', 'gif')):
+                flash('Неверный формат файла. Допустимые форматы: png, jpg, jpeg, gif.', 'danger')
+                return redirect(url_for('main_routes.profile_settings'))
+
+            # Создание директории пользователя
+            user_folder = os.path.join(USER_FOLDER, str(user.id), 'profile')
+            os.makedirs(user_folder, exist_ok=True)
+
+            # Сохранение файла
+            file_path = os.path.join(user_folder, secure_filename(file.filename))
+            file.save(file_path)
+
+            # Обновление пути к фотографии профиля в базе данных
+            user.profile_picture = f'users/{user.id}/profile/{secure_filename(file.filename)}'
+            db.session.commit()
+
+            flash('Фотография профиля успешно обновлена.', 'success')
+            return redirect(url_for('main_routes.profile_settings'))
+
+        # Обновление данных пользователя
+        user.full_name = request.form.get('full_name', user.full_name)
+        user.email = request.form.get('email', user.email)
+        user.phone_number = request.form.get('phone_number', user.phone_number)
+        user.position = request.form.get('position', user.position)
+        if request.form.get('password'):
+            user.password_hash = hash_password(request.form.get('password'))
+        db.session.commit()
+        flash('Профиль успешно обновлен.', 'success')
+        return redirect(url_for('main_routes.profile_settings'))
+
+    return render_template('profile_settings.html', user=user)
+
+
+@main_routes.route('/admin/departments/create', methods=['POST'])
+@login_required
+@admin_required
+def create_department():
+    department_name = request.form.get('department_name')
+    description = request.form.get('description')
+    new_department = Department(name=department_name, description=description)
+    db.session.add(new_department)
+    db.session.commit()
+    flash('Подразделение успешно создано.', 'success')
+    return redirect(url_for('main_routes.admin_dashboard'))
+
+@main_routes.route('/manager', methods=['GET', 'POST'])
+@login_required
+@manager_required
+def manager_dashboard():
+    statuses = ProjectStatus.query.all()
+
+    # Обработка создания проекта
+    if request.method == 'POST':
+        project_name = request.form.get('project_name')
+        description = request.form.get('description')
+        status_id = request.form.get('status_id')
+        deadline = request.form.get('deadline')
+
+        try:
+            deadline = datetime.strptime(deadline, '%Y-%m-%d').date()
+        except ValueError:
+            flash('Некорректный формат даты дедлайна.', 'danger')
+            return redirect(url_for('main_routes.manager_dashboard'))
+
+        # Создание проекта
+        new_project = Project(
+            name=project_name,
+            description=description,
+            status_id=status_id,
+            manager_id=current_user.id,
+            deadline=deadline
+        )
+        db.session.add(new_project)
+        db.session.commit()
+
+        flash('Проект успешно создан.', 'success')
+
+    # Проекты, где менеджер ответственен
+    responsible_projects = Project.query.filter_by(manager_id=current_user.id).all()
+
+    # Проекты, где менеджер участвует в задачах
+    participating_projects = (
+        Project.query
+        .join(Task, Task.project_id == Project.id)
+        .join(TaskUser, TaskUser.task_id == Task.id)
+        .filter(TaskUser.user_id == current_user.id)
+        .distinct()
+        .all()
+    )
+
+    # Объединяем проекты без дублирования
+    projects = list({project.id: project for project in responsible_projects + participating_projects}.values())
+
+    return render_template('manager_dashboard.html', projects=projects, statuses=statuses)

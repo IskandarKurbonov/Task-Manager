@@ -1,75 +1,80 @@
-{% extends 'base.html' %}
+{% extends "base.html" %}
 
-{% block title %}Детали проекта - {{ project.name }}{% endblock %}
+{% block title %}Настройки профиля{% endblock %}
 
 {% block content %}
-<div class="container">
-    <h2 class="mb-4">Проект: {{ project.name }}</h2>
+<div class="container mt-5 d-flex justify-content-between">
+    <!-- Карточка профиля слева -->
+    <div class="profile-settings-card" style="width: 350px;">
+        <h2 class="mb-4 text-center">Настройки профиля</h2>
 
-    <!-- Информация о проекте -->
-    <div class="card mb-4">
-        <div class="card-body">
-            <h5 class="card-title">Информация о проекте</h5>
-            <p><strong>Описание:</strong> {{ project.description }}</p>
-            <p><strong>Ответственный:</strong> {{ project.manager.full_name if project.manager else "Не назначен" }}</p>
-            <p><strong>Дедлайн:</strong> {{ project.deadline if project.deadline else "Не установлен" }}</p>
-            <p><strong>Статус:</strong> {{ project.status.name }}</p>
+        <!-- Профиль пользователя -->
+        <div class="card shadow-sm mb-3">
+            <div class="card-body text-center">
+                {% if user.profile_picture %}
+                    <img src="{{ url_for('static', filename=user.profile_picture) }}" alt="Фото профиля" class="rounded-circle shadow-sm mb-3" width="120" height="120">
+                {% else %}
+                    <img src="{{ url_for('static', filename='users_profile/default_profile_picture.jpg') }}" alt="Фото профиля" class="rounded-circle shadow-sm mb-3" width="120" height="120">
+                {% endif %}
+                <p class="mb-1"><strong>{{ user.full_name }}</strong></p>
+                <p class="text-muted small mb-1">{{ user.username }}</p>
+                <p class="text-muted small">{{ user.email }}</p>
+            </div>
         </div>
+
+        <!-- Загрузка фотографии профиля -->
+        <form method="POST" enctype="multipart/form-data" class="card shadow-sm mb-3">
+            <input type="hidden" name="form_type" value="profile_picture">
+            <div class="card-body">
+                <h5 class="card-title mb-3">Обновить фото профиля</h5>
+                <div class="file-input-wrapper mb-3">
+                    <label for="profile_picture" class="form-label d-block">Выберите файл</label>
+                    <div class="custom-file">
+                        <input type="file" class="custom-file-input" id="profile_picture" name="profile_picture" accept="image/*">
+                        <label class="custom-file-label text-muted" for="profile_picture">Выберите изображение...</label>
+                    </div>
+                </div>
+                <button type="submit" class="btn btn-primary w-100 btn-sm">Загрузить</button>
+            </div>
+        </form>
     </div>
 
-    <!-- Загрузка файлов -->
-    <h4>Файлы проекта</h4>
-    <ul class="list-group mb-4">
-        {% for filename in project.files %}
-            <li class="list-group-item">
-                <a href="{{ url_for('main_routes.download_file', project_id=project.id, filename=filename) }}">{{ filename }}</a>
-            </li>
-        {% else %}
-            <li class="list-group-item text-muted">Файлов пока нет.</li>
-        {% endfor %}
-    </ul>
-
-    <form method="POST" enctype="multipart/form-data" class="mb-4">
-        <div class="form-group">
-            <label for="file">Загрузить файл</label>
-            <input type="file" class="form-control-file" id="file" name="file" required>
-        </div>
-        <button type="submit" class="btn btn-success">Загрузить</button>
-    </form>
-
-    <!-- Список задач -->
-    <h4>Задачи</h4>
-    <ul class="list-group mb-4">
-        {% for task in project.tasks %}
-            <li class="list-group-item">
-                <strong>{{ task.title }}</strong>
-                <p>Ответственный: {{ task.assigned_user.full_name if task.assigned_user else "Не назначен" }}</p>
-                <p>Статус: {{ task.status.name }}</p>
-            </li>
-        {% else %}
-            <li class="list-group-item text-muted">Задач пока нет.</li>
-        {% endfor %}
-    </ul>
-
-    <!-- Комментарии -->
-    <h4>Комментарии</h4>
-    <ul class="list-group mb-4">
-        {% for comment in project.comments %}
-            <li class="list-group-item">
-                <strong>{{ comment.user.full_name }}</strong>
-                <small class="text-muted">{{ comment.created_at.strftime('%Y-%m-%d %H:%M') }}</small>
-                <p>{{ comment.content }}</p>
-            </li>
-        {% else %}
-            <li class="list-group-item text-muted">Комментариев пока нет.</li>
-        {% endfor %}
-    </ul>
-
-    <form method="POST" class="mb-4">
-        <div class="form-group">
-            <textarea name="content" class="form-control" placeholder="Добавить комментарий..." required></textarea>
-        </div>
-        <button type="submit" class="btn btn-primary">Отправить</button>
-    </form>
+    <!-- Форма редактирования профиля справа -->
+    <div class="profile-edit-card" style="width: 400px;">
+        <form method="POST">
+            <div class="card shadow-sm">
+                <div class="card-body">
+                    <h5 class="card-title mb-3">Редактировать профиль</h5>
+                    <div class="form-group mb-2">
+                        <label for="full_name" class="form-label small">Полное имя</label>
+                        <input type="text" class="form-control form-control-sm" id="full_name" name="full_name" value="{{ user.full_name }}" required>
+                    </div>
+                    <div class="form-group mb-2">
+                        <label for="email" class="form-label small">Электронная почта</label>
+                        <input type="email" class="form-control form-control-sm" id="email" name="email" value="{{ user.email }}" required>
+                    </div>
+                    <div class="form-group mb-2">
+                        <label for="phone_number" class="form-label small">Телефон</label>
+                        <input type="text" class="form-control form-control-sm" id="phone_number" name="phone_number" value="{{ user.phone_number }}">
+                    </div>
+                    <div class="form-group mb-3">
+                        <label for="position" class="form-label small">Должность</label>
+                        <input type="text" class="form-control form-control-sm" id="position" name="position" value="{{ user.position }}">
+                    </div>
+                    <button type="submit" class="btn btn-success w-100 btn-sm">Сохранить изменения</button>
+                </div>
+            </div>
+        </form>
+    </div>
 </div>
+
+<script>
+    // Обновление названия файла при выборе
+    document.querySelectorAll('.custom-file-input').forEach(input => {
+        input.addEventListener('change', function () {
+            const fileName = this.files[0]?.name || "Выберите изображение...";
+            this.nextElementSibling.textContent = fileName;
+        });
+    });
+</script>
 {% endblock %}
