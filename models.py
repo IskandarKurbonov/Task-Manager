@@ -42,7 +42,7 @@ class User(db.Model, UserMixin):
     role = db.relationship('Role', back_populates='users', lazy=True)
     managed_projects = db.relationship('Project', back_populates='manager', lazy=True)
     tasks = db.relationship('TaskUser', back_populates='user', lazy=True)
-    comments = db.relationship('Comment', backref='user', lazy=True)
+    comments = db.relationship('Comment', back_populates='user', lazy=True)
 
     def get_id(self):
         return str(self.id)
@@ -105,10 +105,10 @@ class Task(db.Model):
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     deadline = db.Column(db.Date)
 
-    status = db.relationship('TaskStatus', backref='tasks', lazy=True)
-    comments = db.relationship('Comment', backref='task', lazy=True)
+    status = db.relationship('TaskStatus', back_populates='tasks', lazy=True)
+    comments = db.relationship('Comment', back_populates='task', lazy=True)
     assigned_users = db.relationship('TaskUser', back_populates='task', lazy=True)
-    subtasks = db.relationship('Subtask', backref='parent_task', lazy=True)
+    subtasks = db.relationship('Subtask', back_populates='parent_task', lazy=True)
 
 
 # Таблица статусов задач
@@ -118,8 +118,8 @@ class TaskStatus(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(50), unique=True, nullable=False)
 
-    tasks = db.relationship('Task', backref='status', lazy=True)
-    subtasks = db.relationship('Subtask', backref='status', lazy=True)
+    tasks = db.relationship('Task', back_populates='status', lazy=True)
+    subtasks = db.relationship('Subtask', back_populates='status', lazy=True)
 
 
 # Таблица подзадач
@@ -135,8 +135,8 @@ class Subtask(db.Model):
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     deadline = db.Column(db.Date)
 
-    status = db.relationship('TaskStatus', backref='subtasks', lazy=True)
-    assigned_users = db.relationship('SubtaskUser', back_populates='subtask', lazy=True)
+    status = db.relationship('TaskStatus', back_populates='subtasks', lazy=True)
+    parent_task = db.relationship('Task', back_populates='subtasks', lazy=True)
 
 # Промежуточная таблица для подзадач и пользователей
 class SubtaskUser(db.Model):
@@ -148,6 +148,7 @@ class SubtaskUser(db.Model):
 
     subtask = db.relationship('Subtask', back_populates='assigned_users', lazy=True)
     user = db.relationship('User', lazy=True)
+
 
 # Таблица статусов проектов
 class ProjectStatus(db.Model):
@@ -183,6 +184,7 @@ class ProjectUser(db.Model):
     user_id = db.Column(db.Integer, db.ForeignKey('users.id', ondelete='CASCADE'))
     role = db.Column(db.String(50), nullable=False)
 
+
 # Таблица комментариев
 class Comment(db.Model):
     __tablename__ = 'comments'
@@ -193,8 +195,9 @@ class Comment(db.Model):
     content = db.Column(db.Text, nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
-    # Добавляем связь с пользователем
-    user = db.relationship('User', backref='comments', lazy=True)  # Связь с User
+    user = db.relationship('User', back_populates='comments')
+    task = db.relationship('Task', back_populates='comments')
+
 
 # Функция для создания базы данных
 def init_db(app):

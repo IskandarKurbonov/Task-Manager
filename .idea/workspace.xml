@@ -6,21 +6,12 @@
   <component name="ChangeListManager">
     <list default="true" id="702d8c3b-0538-43ed-8f1f-7fced534c4fb" name="Changes" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app.py" beforeDir="false" afterPath="$PROJECT_DIR$/app.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/config.py" beforeDir="false" afterPath="$PROJECT_DIR$/config.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/alembic.ini" beforeDir="false" afterPath="$PROJECT_DIR$/alembic.ini" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/alembic/README" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/alembic/env.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/alembic/script.py.mako" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/alembic/versions/dead7def7bf4_add_profile_picture_to_user_model.py" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/models.py" beforeDir="false" afterPath="$PROJECT_DIR$/models.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/routes.py" beforeDir="false" afterPath="$PROJECT_DIR$/routes.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/static/default_profile_picture.jpg" beforeDir="false" afterPath="$PROJECT_DIR$/static/users_profile/default_profile_picture.jpg" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/static/logo.png" beforeDir="false" afterPath="$PROJECT_DIR$/static/styles/logo.png" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/static/users_profile/5/photo_2022-12-23_20-10-40.jpg" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/static/users_profile/5/photos.jpg" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/static/users_profile/5/rounded_photo_2022-12-23_20-10-40.jpg" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/static/users_profile/5/rounded_photos.jpg" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/static/users_profile/6/photo_2024-01-07_17-08-07.jpg" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/static/users_profile/6/rounded_photo_2024-01-07_17-08-07.jpg" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/templates/base.html" beforeDir="false" afterPath="$PROJECT_DIR$/templates/base.html" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/templates/create_project.html" beforeDir="false" afterPath="$PROJECT_DIR$/templates/create_project.html" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/templates/profile_settings.html" beforeDir="false" afterPath="$PROJECT_DIR$/templates/profile_settings.html" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
