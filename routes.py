@@ -534,12 +534,18 @@ def projects():
         projects = Project.query.options(
             joinedload(Project.tasks).joinedload(Task.status)
         ).all()
-        print(f"Projects loaded: {[project.name for project in projects]}")
+
+        # Вычисляем прогресс для каждого проекта
+        for project in projects:
+            total_tasks = len(project.tasks)
+            completed_tasks = sum(1 for task in project.tasks if task.status and task.status.name == 'Done')
+            project.progress = (completed_tasks / total_tasks * 100) if total_tasks > 0 else 0
+
         return render_template('projects.html', projects=projects)
     except Exception as e:
-        print(f"Error loading projects: {e}")
         flash(f'Произошла ошибка при загрузке проектов: {str(e)}', 'danger')
-        return render_template('projects.html')
+        return render_template('projects.html', projects=[])
+
 
 
 

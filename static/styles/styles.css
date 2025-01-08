@@ -1,4 +1,4 @@
-/* Общие стили */
+/* Основной стиль */
 body {
     background-color: #f8f9fa;
     font-family: 'Roboto', sans-serif;
@@ -6,8 +6,71 @@ body {
     transition: background-color 0.3s, color 0.3s;
 }
 
+/* Цвет иконок в карточках */
+.date-icon {
+    color: #007bff; /* Синий */
+}
+
+.deadline-icon {
+    color: #dc3545; /* Красный */
+}
+
+.user-name {
+    color: #28a745; /* Зелёный */
+}
+
+/* Цвет иконок в темной теме */
+body.dark-mode .date-icon {
+    color: #80bdff; /* Более мягкий синий для темной темы */
+}
+
+body.dark-mode .deadline-icon {
+    color: #ff6b6b; /* Более мягкий красный для темной темы */
+}
+
+body.dark-mode .user-name {
+    color: #90ee90; /* Светло-зеленый для темной темы */
+}
+
+
+/* Темная тема */
+body.dark-mode {
+    background-color: #343a40;
+    color: #f8f9fa;
+}
+
+body.dark-mode .navbar {
+    background-color: #212529 !important;
+    color: #f8f9fa;
+    border-bottom: 1px solid #495057;
+}
+
+body.dark-mode .btn-dark {
+    background-color: #f8f9fa;
+    color: #343a40;
+}
+
+body.dark-mode .btn-dark i {
+    color: #343a40;
+}
+
+body.dark-mode .card {
+    background-color: #495057;
+    color: #f8f9fa;
+}
+
+body.dark-mode .progress-container {
+    background-color: #6c757d;
+}
+
+body.dark-mode .progress-bar {
+    color: #ffffff;
+}
+
+/* Навигационная панель */
 .navbar {
     height: 70px;
+    transition: background-color 0.3s;
 }
 
 .navbar img {
@@ -18,7 +81,7 @@ body {
 .card {
     border-radius: 10px;
     box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-    transition: transform 0.2s ease-in-out;
+    transition: transform 0.2s ease-in-out, background-color 0.3s;
 }
 
 .card:hover {
@@ -30,43 +93,78 @@ body {
     font-weight: bold;
 }
 
-.card-text {
-    font-size: 0.95rem;
-    line-height: 1.5;
+/* Прогресс-бар */
+.progress-container {
+    position: relative;
+    background-color: #e9ecef;
+    border-radius: 8px;
+    overflow: hidden;
+    height: 15px;
+    width: 100%;
+    box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.1);
 }
 
-/* Дата и дедлайн */
-.date-icon {
-    color: #007bff;
-}
-
-.deadline-icon {
-    color: #dc3545;
-}
-
-/* Имена пользователей */
-.user-name {
-    color: #28a745;
-    font-weight: bold;
-}
-
-/* Прогресс выполнения */
+/* Общий стиль прогресс-бара */
 .progress-bar {
+    position: relative;
+    height: 100%;
+    text-align: center;
+    line-height: 15px;
+    font-size: 0.85rem;
+    font-weight: bold;
+    color: white;
     transition: width 0.3s;
 }
 
-/* Темная тема */
-body.dark-mode {
-    background-color: #343a40;
-    color: #f8f9fa;
+/* Прогресс-бар: цвета в зависимости от процентов */
+.progress-bar[data-progress="0"] {
+    width: 5%;
+    background: linear-gradient(to right, rgba(255, 0, 0, 0.3), rgba(255, 0, 0, 1));
 }
 
-body.dark-mode .card {
-    background-color: #495057;
-    color: #f8f9fa;
+.progress-bar[data-progress="25"] {
+    width: 25%;
+    background: linear-gradient(to right, rgba(255, 165, 0, 0.3), rgba(255, 165, 0, 1));
 }
 
-body.dark-mode .navbar {
-    background-color: #212529;
-    color: #f8f9fa;
+.progress-bar[data-progress="50"] {
+    width: 50%;
+    background: linear-gradient(to right, rgba(255, 255, 0, 0.3), rgba(255, 255, 0, 1));
+}
+
+.progress-bar[data-progress="75"] {
+    width: 75%;
+    background: linear-gradient(to right, rgba(173, 255, 47, 0.3), rgba(173, 255, 47, 1));
+}
+
+.progress-bar[data-progress="100"] {
+    width: 100%;
+    background: green;
+    animation: none; /* Убираем анимацию для завершенного проекта */
+}
+
+/* Завершенные проекты */
+.progress-bar[data-progress="100"]::after {
+    content: "Выполнено";
+    color: white;
+    font-weight: bold;
+    display: inline-block;
+}
+
+/* Частично завершенные */
+.progress-bar[data-progress]:not([data-progress="100"])::after {
+    content: attr(data-progress) "%";
+    color: white;
+    font-weight: bold;
+    display: inline-block;
+}
+
+/* Анимация */
+@keyframes wave-animation {
+    0% {
+        background-position: 0 0;
+    }
+    100% {
+        background-position: 100% 0;
+    }
 }

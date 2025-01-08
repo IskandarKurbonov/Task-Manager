@@ -22,7 +22,7 @@
                     <div>
                         <p>
                             <i class="fas fa-user-circle user-name"></i>
-                            <span class="user-name">{{ project.manager.full_name }}</span>
+                            <b><span class="user-name">{{ project.manager.full_name }}</span></b>
                         </p>
                         <p>
                             <i class="fas fa-calendar-alt date-icon"></i>
@@ -32,17 +32,21 @@
                             <i class="fas fa-clock deadline-icon"></i>
                             <span>Дедлайн: {{ project.deadline }}</span>
                         </p>
-                        <p><strong>Статус:</strong> {{ project.status.name }}</p>
+                        <p>
+                            <strong>Статус:</strong>
+                            <span class="badge
+                                {% if project.status.name == 'Not Started' %}bg-light text-dark
+                                {% elif project.status.name == 'In Progress' %}bg-warning text-dark
+                                {% elif project.status.name == 'Completed' %}bg-success text-white
+                                {% elif project.status.name == 'On Hold' %}bg-secondary text-white
+                                {% endif %}">
+                                {{ project.status.name }}
+                            </span>
+                        </p>
                     </div>
-                    {% if progress is defined and progress is not none %}
-                        <div class="progress-bar bg-success" style="width: {{ progress|round(0) }}%">
-                            {{ progress|round(0) }}%
-                        </div>
-                    {% else %}
-                        <div class="progress-bar bg-secondary" style="width: 0%">
-                            0%
-                        </div>
-                    {% endif %}
+                    <div class="progress-container">
+                        <div class="progress-bar" data-progress="{{ project.progress|round(0) }}"></div>
+                    </div>
                     <div class="d-flex justify-content-between mt-2">
                         <button class="btn btn-info btn-sm" type="button" data-toggle="modal" data-target="#tasksModal{{ project.id }}">
                             Задачи проекта
