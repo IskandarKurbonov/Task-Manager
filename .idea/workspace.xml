@@ -5,15 +5,10 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="702d8c3b-0538-43ed-8f1f-7fced534c4fb" name="Changes" comment="">
-      <change afterPath="$PROJECT_DIR$/templates/admin_dashboard.html" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/templates/manager_dashboard.html" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/templates/user_dashboard.html" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/models.py" beforeDir="false" afterPath="$PROJECT_DIR$/models.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/routes.py" beforeDir="false" afterPath="$PROJECT_DIR$/routes.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/templates/base.html" beforeDir="false" afterPath="$PROJECT_DIR$/templates/base.html" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/templates/create_project.html" beforeDir="false" afterPath="$PROJECT_DIR$/templates/create_project.html" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/templates/profile_settings.html" beforeDir="false" afterPath="$PROJECT_DIR$/templates/profile_settings.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/templates/admin_dashboard.html" beforeDir="false" afterPath="$PROJECT_DIR$/templates/admin_dashboard.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/templates/manager_dashboard.html" beforeDir="false" afterPath="$PROJECT_DIR$/templates/manager_dashboard.html" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />

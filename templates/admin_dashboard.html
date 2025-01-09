@@ -27,20 +27,20 @@
                             <label for="username" class="form-label">Имя пользователя</label>
                             <input type="text" class="form-control" id="username" name="username" placeholder="Введите имя пользователя" required>
                         </div>
-                        <div class="form-group mb-3">
-                            <label for="full_name" class="form-label">ФИО</label>
-                            <input type="text" class="form-control" id="full_name" name="full_name" placeholder="Введите полное имя" required>
+                        <div class="form-group">
+                            <label for="full_name">ФИО</label>
+                            <input type="text" class="form-control" id="full_name" name="full_name" required>
                         </div>
-                        <div class="form-group mb-3">
-                            <label for="email" class="form-label">Электронная почта</label>
-                            <input type="email" class="form-control" id="email" name="email" placeholder="Введите email" required>
+                        <div class="form-group">
+                            <label for="email">Электронная почта</label>
+                            <input type="email" class="form-control" id="email" name="email" required>
                         </div>
-                        <div class="form-group mb-3">
-                            <label for="password" class="form-label">Пароль</label>
-                            <input type="password" class="form-control" id="password" name="password" placeholder="Введите пароль" required>
+                        <div class="form-group">
+                            <label for="password">Пароль</label>
+                            <input type="password" class="form-control" id="password" name="password" required>
                         </div>
-                        <div class="form-group mb-3">
-                            <label for="department_id" class="form-label">Подразделение</label>
+                        <div class="form-group">
+                            <label for="department_id">Подразделение</label>
                             <select class="form-control" id="department_id" name="department_id" required>
                                 <option value="">Выберите подразделение</option>
                                 {% for department in departments %}
@@ -48,8 +48,8 @@
                                 {% endfor %}
                             </select>
                         </div>
-                        <div class="form-group mb-3">
-                            <label for="role_id" class="form-label">Роль</label>
+                        <div class="form-group">
+                            <label for="role_id">Роль</label>
                             <select class="form-control" id="role_id" name="role_id" required>
                                 <option value="">Выберите роль</option>
                                 {% for role in roles %}
@@ -57,10 +57,23 @@
                                 {% endfor %}
                             </select>
                         </div>
-                        <div class="text-center">
-                            <button type="submit" class="btn btn-success btn-sm px-4">Добавить</button>
-                            <button type="button" class="btn btn-danger btn-sm px-4" onclick="toggleForm('userForm')">Скрыть</button>
+                        <button type="submit" class="btn btn-success btn-block">Добавить</button>
+                    </form>
+
+                    <hr>
+
+                    <h6 class="mt-4 mb-3 text-center text-primary">Просмотр пользователей</h6>
+                    <form method="GET" action="{{ url_for('main_routes.view_users') }}">
+                        <div class="form-group">
+                            <label for="department_select">Выберите подразделение</label>
+                            <select class="form-control" id="department_select" name="department_id" required>
+                                <option value="">Выберите подразделение</option>
+                                {% for department in departments %}
+                                    <option value="{{ department.id }}">{{ department.name }}</option>
+                                {% endfor %}
+                            </select>
                         </div>
+                        <button type="submit" class="btn btn-info btn-block">Просмотреть пользователей</button>
                     </form>
                 </div>
             </div>
@@ -71,28 +84,25 @@
             <div class="card border-success">
                 <div class="card-body text-center">
                     <h5 class="card-title text-success"><i class="fas fa-folder"></i> Проекты</h5>
-                    <a href="#" class="btn btn-primary btn-block mb-2" onclick="toggleForm('projectForm')">
-                        <i class="fas fa-folder-plus"></i> Добавить
-                    </a>
-                    <a href="#" class="btn btn-danger btn-block">
-                        <i class="fas fa-eye"></i> Просмотр проектов
-                    </a>
+                    <button class="btn btn-primary btn-block mb-2" onclick="toggleForm('projectForm')">
+                        <i class="fas fa-folder-plus"></i> Управление проектами
+                    </button>
                 </div>
             </div>
             <div id="projectForm" class="form-container mt-3 d-none">
-                <div class="card" style="border-radius: 20px; padding: 20px; margin-bottom: 50px; border: none;">
-                    <form id="projectFormSubmit">
-                        <h6 class="mb-3 text-center text-success">Добавить</h6>
-                        <div class="form-group mb-3">
-                            <label for="project_name" class="form-label">Название проекта</label>
-                            <input type="text" class="form-control" id="project_name" name="project_name" placeholder="Введите название проекта" required>
+                <div class="card p-4">
+                    <h6 class="mb-3 text-center text-success">Добавить проект</h6>
+                    <form method="POST" action="{{ url_for('main_routes.create_project_admin') }}">
+                        <div class="form-group">
+                            <label for="project_name">Название проекта</label>
+                            <input type="text" class="form-control" id="project_name" name="project_name" required>
                         </div>
-                        <div class="form-group mb-3">
-                            <label for="deadline" class="form-label">Дедлайн</label>
+                        <div class="form-group">
+                            <label for="deadline">Дедлайн</label>
                             <input type="date" class="form-control" id="deadline" name="deadline" required>
                         </div>
-                        <div class="form-group mb-3">
-                            <label for="manager_id" class="form-label">Ответственный</label>
+                        <div class="form-group">
+                            <label for="manager_id">Ответственный</label>
                             <select class="form-control" id="manager_id" name="manager_id" required>
                                 <option value="">Выберите менеджера</option>
                                 {% for user in users %}
@@ -100,8 +110,8 @@
                                 {% endfor %}
                             </select>
                         </div>
-                        <div class="form-group mb-3">
-                            <label for="status_id" class="form-label">Статус</label>
+                        <div class="form-group">
+                            <label for="status_id">Статус</label>
                             <select class="form-control" id="status_id" name="status_id" required>
                                 <option value="">Выберите статус</option>
                                 {% for status in statuses %}
@@ -109,14 +119,11 @@
                                 {% endfor %}
                             </select>
                         </div>
-                        <div class="form-group mb-3">
-                            <label for="description" class="form-label">Описание</label>
-                            <textarea class="form-control" id="description" name="description" rows="2" placeholder="Введите описание проекта" required></textarea>
+                        <div class="form-group">
+                            <label for="description">Описание</label>
+                            <textarea class="form-control" id="description" name="description" rows="2" required></textarea>
                         </div>
-                        <div class="text-center">
-                            <button type="submit" class="btn btn-success btn-sm px-4">Добавить</button>
-                            <button type="button" class="btn btn-danger btn-sm px-4" onclick="toggleForm('projectForm')">Скрыть</button>
-                        </div>
+                        <button type="submit" class="btn btn-success btn-block">Добавить</button>
                     </form>
                 </div>
             </div>
@@ -127,30 +134,24 @@
             <div class="card border-info">
                 <div class="card-body text-center">
                     <h5 class="card-title text-info"><i class="fas fa-building"></i> Подразделения</h5>
-                    <a href="#" class="btn btn-primary btn-block mb-2" onclick="toggleForm('departmentForm')">
-                        <i class="fas fa-plus"></i> Добавить
-                    </a>
-                    <a href="#" class="btn btn-danger btn-block">
-                        <i class="fas fa-list"></i> Список подразделений
-                    </a>
+                    <button class="btn btn-primary btn-block mb-2" onclick="toggleForm('departmentForm')">
+                        <i class="fas fa-plus"></i> Управление подразделениями
+                    </button>
                 </div>
             </div>
             <div id="departmentForm" class="form-container mt-3 d-none">
-                <div class="card" style="border-radius: 20px; padding: 20px; margin-bottom: 50px; border: none;">
-                    <form id="departmentFormSubmit">
-                        <h6 class="mb-3 text-center text-info">Добавить</h6>
-                        <div class="form-group mb-3">
-                            <label for="department_name" class="form-label">Название подразделения</label>
-                            <input type="text" class="form-control" id="department_name" name="department_name" placeholder="Название подразделения" required>
+                <div class="card p-4">
+                    <h6 class="mb-3 text-center text-info">Добавить подразделение</h6>
+                    <form method="POST" action="{{ url_for('main_routes.create_department') }}">
+                        <div class="form-group">
+                            <label for="department_name">Название подразделения</label>
+                            <input type="text" class="form-control" id="department_name" name="department_name" required>
                         </div>
-                        <div class="form-group mb-3">
-                            <label for="description" class="form-label">Описание</label>
-                            <textarea class="form-control" id="description" name="description" rows="2" placeholder="Введите описание подразделения" required></textarea>
+                        <div class="form-group">
+                            <label for="description">Описание</label>
+                            <textarea class="form-control" id="description" name="description" rows="2" required></textarea>
                         </div>
-                        <div class="text-center">
-                            <button type="submit" class="btn btn-info btn-sm px-4">Добавить</button>
-                            <button type="button" class="btn btn-danger btn-sm px-4" onclick="toggleForm('departmentForm')">Скрыть</button>
-                        </div>
+                        <button type="submit" class="btn btn-success btn-block">Добавить</button>
                     </form>
                 </div>
             </div>
@@ -166,16 +167,12 @@
 
         if (currentVisibleForm && currentVisibleForm !== form) {
             currentVisibleForm.classList.add('d-none');
-            currentVisibleForm.classList.remove('d-block');
         }
 
         if (form.classList.contains('d-none')) {
             form.classList.remove('d-none');
-            form.classList.add('d-block');
             currentVisibleForm = form;
-            form.scrollIntoView({ behavior: 'smooth', block: 'start' });
         } else {
-            form.classList.remove('d-block');
             form.classList.add('d-none');
             currentVisibleForm = null;
         }
@@ -184,44 +181,24 @@
 
 <style>
     .form-container {
-        transition: max-height 0.3s ease-in-out, visibility 0.3s;
-        overflow: hidden;
-        margin-bottom: 50px;
+        display: none;
     }
     .form-container.d-none {
-        max-height: 0;
-        visibility: hidden;
+        display: none;
     }
-    .form-container.d-block {
-        max-height: 600px;
-        visibility: visible;
+    .form-container {
+        display: block;
     }
     .card {
         border-radius: 20px;
         border: none;
     }
-    form {
-        padding: 20px;
-        border-radius: 20px;
-    }
-    .form-group label {
-        font-weight: bold;
-        color: #495057;
-    }
-    .form-group input,
-    .form-group select,
-    .form-group textarea {
+    .btn {
         border-radius: 8px;
-        border: 1px solid #ced4da;
-        padding: 8px 12px;
-        font-size: 1rem;
+        padding: 10px;
     }
-    form .btn {
-        margin-top: 10px;
-        padding: 8px 16px;
-    }
-    .btn-sm {
-        font-size: 0.9rem;
+    .btn-block {
+        font-size: 1.1rem;
     }
 </style>
 {% endblock %}
