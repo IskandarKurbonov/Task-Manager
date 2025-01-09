@@ -12,17 +12,18 @@
         function toggleTheme() {
             document.body.classList.toggle('dark-mode');
             const themeButton = document.getElementById('theme-button');
-            themeButton.innerHTML = themeButton.innerHTML.includes('Темная тема')
-                ? '<i class="fas fa-sun"></i> Светлая тема'
-                : '<i class="fas fa-moon"></i> Темная тема';
+            themeButton.innerHTML = document.body.classList.contains('dark-mode')
+                ? '<i class="fas fa-sun"></i>'
+                : '<i class="fas fa-moon"></i>';
         }
     </script>
 </head>
 <body>
-    <nav class="navbar navbar-expand-lg navbar-light bg-light fixed-top">
+    <nav class="navbar navbar-expand-lg navbar-light bg-light fixed-top shadow-sm py-2">
         <div class="container">
-            <a class="navbar-brand" href="{{ url_for('auth_routes.login') }}">
-                <img src="{{ url_for('static', filename='styles/logo.png') }}" alt="Logo">
+            <a class="navbar-brand d-flex align-items-center" href="{{ url_for('main_routes.main') }}">
+                <img src="{{ url_for('static', filename='styles/logo.png') }}" alt="TaskFlow Logo" class="logo mr-2">
+                <span class="brand-name">TaskFlow</span>
             </a>
 
             <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
@@ -31,20 +32,20 @@
             <div class="collapse navbar-collapse" id="navbarNav">
                 <ul class="navbar-nav ml-auto">
                     <li class="nav-item">
-                        <button id="theme-button" onclick="toggleTheme()" class="btn btn-dark btn-sm mr-3">
-                            <i class="fas fa-moon"></i> Темная тема
+                        <button id="theme-button" onclick="toggleTheme()" class="btn btn-outline-dark btn-sm mr-3">
+                            <i class="fas fa-moon"></i>
                         </button>
                     </li>
                     {% if current_user.is_authenticated %}
                         <li class="nav-item">
-                            <a href="{{ url_for('main_routes.profile_settings') }}" class="btn btn-secondary btn-sm mr-3">
+                            <a href="{{ url_for('main_routes.profile') }}" class="btn btn-secondary btn-sm mr-3">
                                 <i class="fas fa-user-circle"></i> Мой профиль
                             </a>
                             <a href="{{ url_for('auth_routes.logout') }}" class="btn btn-danger btn-sm">
                                 <i class="fas fa-sign-out-alt"></i> Выход
                             </a>
                         </li>
-                    {% else %}
+                    {% elif request.endpoint != 'auth_routes.login' %}
                         <li class="nav-item">
                             <a class="nav-link" href="{{ url_for('auth_routes.login') }}">Вход</a>
                         </li>
@@ -54,7 +55,7 @@
         </div>
     </nav>
 
-    <div class="content-container">
+    <div class="content-container mt-5 pt-3">
         <div class="container">
             {% block content %}
             {% endblock %}

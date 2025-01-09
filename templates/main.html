@@ -1,0 +1,56 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="main-container">
+    <!-- Боковая панель -->
+    <aside class="sidebar">
+        <h2>Проекты</h2>
+        <ul class="project-list">
+            {% for project in projects %}
+                <li>
+                    <a href="#" class="project-link">
+                        <span class="project-icon"><i class="fas fa-folder"></i></span>
+                        {{ project.name }}
+                    </a>
+                </li>
+            {% endfor %}
+        </ul>
+    </aside>
+
+    <!-- Основной контент -->
+    <main class="content">
+        <h1>Сводка</h1>
+        <div class="summary-cards">
+            <!-- Карточка: Пользователи -->
+            <div class="summary-card">
+                <h3><i class="fas fa-users"></i> Пользователи</h3>
+                <p>{{ users_count }} зарегистрировано</p>
+            </div>
+
+            <!-- Карточка: Новые проекты -->
+            <div class="summary-card">
+                <h3><i class="fas fa-folder-plus"></i> Созданные проекты</h3>
+                <p>{{ new_projects_count }} за последние 7 дней</p>
+            </div>
+
+            <!-- Карточка: Выполненные проекты -->
+            <div class="summary-card">
+                <h3><i class="fas fa-check-circle"></i> Выполненные проекты</h3>
+                <p>{{ completed_projects_count }} завершено</p>
+            </div>
+
+            <!-- Карточка: Активность задач -->
+            <div class="summary-card">
+                <h3><i class="fas fa-tasks"></i> Активность задач</h3>
+                <p>{{ task_activity_count }} изменений статуса</p>
+            </div>
+
+            <!-- Карточка: Нагрузка пользователей -->
+            <div class="summary-card">
+                <h3><i class="fas fa-chart-pie"></i> Нагрузка пользователей</h3>
+                <p>{{ user_load }} задач на пользователя</p>
+            </div>
+        </div>
+    </main>
+</div>
+{% endblock %}

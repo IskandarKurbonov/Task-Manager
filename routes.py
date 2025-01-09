@@ -60,6 +60,32 @@ def verify_password(stored_password_hash, provided_password):
     return stored_password_hash == hashlib.sha256(provided_password.encode('utf-8')).hexdigest()
 
 
+#Основная страница
+@main_routes.route('/main', methods=['GET'])
+@login_required
+def main():
+    # Получение проектов для администратора
+    if current_user.role.name == 'admin':
+        projects = Project.query.all()
+
+    # Получение проектов для менеджера
+    elif current_user.role.name == 'manager':
+        managed_projects = Project.query.filter_by(manager_id=current_user.id).all()
+        assigned_tasks = Task.query.filter(Task.assigned_users.any(user_id=current_user.id)).all()
+        assigned_projects = {task.project for task in assigned_tasks if task.project}
+        projects = list(set(managed_projects).union(assigned_projects))
+
+    # Получение проектов для пользователя
+    elif current_user.role.name == 'user':
+        assigned_tasks = Task.query.filter(Task.assigned_users.any(user_id=current_user.id)).all()
+        projects = {task.project for task in assigned_tasks if task.project}
+
+    else:
+        projects = []
+
+    return render_template('main.html', projects=projects)
+
+
 # Маршрут для входа
 @auth_routes.route('/login', methods=['GET', 'POST'])
 def login():
@@ -71,12 +97,7 @@ def login():
         if user and verify_password(user.password_hash, password):
             login_user(user)
             flash('Вы успешно вошли в систему!', 'success')
-            if user.role.name == 'admin':
-                return redirect(url_for('main_routes.admin_dashboard'))
-            elif user.role.name == 'manager':
-                return redirect(url_for('main_routes.manager_dashboard'))
-            elif user.role.name == 'user':
-                return redirect(url_for('main_routes.user_dashboard'))
+            return redirect(url_for('main_routes.main'))
         else:
             flash('Неверное имя пользователя или пароль.', 'danger')
     return render_template('login.html')
@@ -389,7 +410,8 @@ def admin_dashboard():
     projects = Project.query.all()
     statuses = ProjectStatus.query.all()
 
-    return render_template('admin_dashboard.html', users=users, roles=roles, departments=departments, projects=projects, statuses=statuses)
+    return render_template('admin_dashboard.html', users=users, roles=roles, departments=departments,
+                           projects=projects, statuses=statuses)
 
 
 @main_routes.route('/manager/dashboard', methods=['GET', 'POST'])

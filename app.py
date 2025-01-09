@@ -69,7 +69,7 @@ def initialize_project_statuses():
 
 # Инициализация статусов задач
 def initialize_task_statuses():
-    task_statuses = ['Не начат', 'В процессе', 'Выполнено']
+    task_statuses = ['Не начат', 'Назначен', 'В процессе', 'Выполнено']
     for status in task_statuses:
         existing_status = TaskStatus.query.filter_by(name=status).first()
         if not existing_status:
