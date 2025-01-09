@@ -1,4 +1,5 @@
 import hashlib
+from datetime import timedelta
 from hashlib import sha256
 from flask_login import login_user, logout_user
 import os
@@ -64,26 +65,42 @@ def verify_password(stored_password_hash, provided_password):
 @main_routes.route('/main', methods=['GET'])
 @login_required
 def main():
-    # Получение проектов для администратора
+    # Получение проектов для текущего пользователя
     if current_user.role.name == 'admin':
         projects = Project.query.all()
-
-    # Получение проектов для менеджера
     elif current_user.role.name == 'manager':
         managed_projects = Project.query.filter_by(manager_id=current_user.id).all()
         assigned_tasks = Task.query.filter(Task.assigned_users.any(user_id=current_user.id)).all()
         assigned_projects = {task.project for task in assigned_tasks if task.project}
         projects = list(set(managed_projects).union(assigned_projects))
-
-    # Получение проектов для пользователя
     elif current_user.role.name == 'user':
         assigned_tasks = Task.query.filter(Task.assigned_users.any(user_id=current_user.id)).all()
         projects = {task.project for task in assigned_tasks if task.project}
-
     else:
         projects = []
 
-    return render_template('main.html', projects=projects)
+    # Получение статусов задач
+    task_statuses = TaskStatus.query.all()
+
+    # Задачи текущего выбранного проекта (например, первого из списка)
+    selected_project_id = request.args.get('project_id')
+    if selected_project_id:
+        tasks = Task.query.filter_by(project_id=selected_project_id).all()
+    else:
+        tasks = []
+
+    return render_template(
+        'main.html',
+        projects=projects,
+        task_statuses=task_statuses,
+        tasks=tasks,
+        users_count=User.query.count(),
+        new_projects_count=Project.query.filter(Project.created_at >= datetime.utcnow() - timedelta(days=7)).count(),
+        completed_projects_count=Project.query.filter_by(status_id=3).count(),
+        task_activity_count=Task.query.filter(Task.status_id != 1).count(),  # Пример фильтра
+        user_load=len(tasks) // max(1, len(User.query.all()))  # Пример расчета
+    )
+
 
 
 # Маршрут для входа
