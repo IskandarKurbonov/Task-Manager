@@ -1,0 +1,63 @@
+{% extends 'base.html' %}
+
+{% block title %}
+Проекты
+{% endblock %}
+
+{% block content %}
+<h1 class="mb-4">Проекты</h1>
+
+<div class="d-flex justify-content-end mb-4">
+    <a href="{{ url_for('main_routes.create_project') }}" class="btn btn-success">
+        <i class="fas fa-plus"></i> Добавить проект
+    </a>
+</div>
+
+<div class="row">
+    {% for project in projects %}
+        <div class="col-md-4 mb-4">
+            <div class="card">
+                <div class="card-body d-flex flex-column">
+                    <h5 class="card-title">{{ project.name }}</h5>
+                    <div>
+                        <p>
+                            <i class="fas fa-user-circle user-name"></i>
+                            <b><span class="user-name">{{ project.manager.full_name }}</span></b>
+                        </p>
+                        <p>
+                            <i class="fas fa-calendar-alt date-icon"></i>
+                            <span>Начало: {{ project.created_at.strftime('%Y-%m-%d') }}</span>
+                        </p>
+                        <p>
+                            <i class="fas fa-clock deadline-icon"></i>
+                            <span>Дедлайн: {{ project.deadline }}</span>
+                        </p>
+                        <p>
+                            <strong>Статус:</strong>
+                            <span class="badge
+                                {% if project.status.name == 'Not Started' %}bg-light text-dark
+                                {% elif project.status.name == 'In Progress' %}bg-warning text-dark
+                                {% elif project.status.name == 'Completed' %}bg-success text-white
+                                {% elif project.status.name == 'On Hold' %}bg-secondary text-white
+                                {% endif %}">
+                                {{ project.status.name }}
+                            </span>
+                        </p>
+                    </div>
+                    <div class="progress-container">
+                        <div class="progress-bar" data-progress="{{ project.progress|round(0) }}"></div>
+                    </div>
+                    <div class="d-flex justify-content-between mt-2">
+                        <button class="btn btn-info btn-sm" type="button" data-toggle="modal" data-target="#tasksModal{{ project.id }}">
+                            Задачи проекта
+                        </button>
+                        <a href="{{ url_for('main_routes.project_details', project_id=project.id) }}" class="btn btn-primary btn-sm">Подробнее</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    {% else %}
+        <p>Проектов пока нет.</p>
+    {% endfor %}
+</div>
+{% endblock %}

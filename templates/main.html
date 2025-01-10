@@ -1,0 +1,104 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="main-container">
+    <!-- Боковая панель -->
+    <aside class="sidebar">
+        <h2>Проекты</h2>
+        <ul class="project-list">
+            {% for project in projects %}
+                <li>
+                    <a href="#" class="project-link" onclick="loadProject('{{ project.id }}')">
+                        <span class="project-icon"><i class="fas fa-folder"></i></span>
+                        {{ project.name }}
+                    </a>
+                </li>
+            {% endfor %}
+        </ul>
+    </aside>
+
+    <!-- Основной контент -->
+    <main class="content">
+        <!-- Панель управления проектом -->
+        <div class="project-panel">
+            <button id="summary-btn" class="btn btn-tab" onclick="toggleView('summary')">
+                Сводка
+            </button>
+            <button id="tasks-btn" class="btn btn-tab" onclick="toggleView('tasks')">
+                Задачи
+            </button>
+        </div>
+
+        <!-- Сводка -->
+        <div id="summary-view" class="summary-cards">
+            <div class="summary-card">
+                <h3><i class="fas fa-users"></i> Пользователи</h3>
+                <p>{{ users_count }} зарегистрировано</p>
+            </div>
+            <div class="summary-card">
+                <h3><i class="fas fa-folder-plus"></i> Созданные проекты</h3>
+                <p>{{ new_projects_count }} за последние 7 дней</p>
+            </div>
+            <div class="summary-card">
+                <h3><i class="fas fa-check-circle"></i> Выполненные проекты</h3>
+                <p>{{ completed_projects_count }} завершено</p>
+            </div>
+            <div class="summary-card">
+                <h3><i class="fas fa-tasks"></i> Активность задач</h3>
+                <p>{{ task_activity_count }} изменений статуса</p>
+            </div>
+            <div class="summary-card">
+                <h3><i class="fas fa-chart-pie"></i> Нагрузка пользователей</h3>
+                <p>{{ user_load }} задач на пользователя</p>
+            </div>
+        </div>
+
+        <!-- Задачи -->
+        <div id="tasks-view" class="task-view d-none">
+            <div class="status-list">
+                {% for status in task_statuses %}
+                    <div class="status-card">
+                        <div class="status-header status-{{ status.color }}">
+                            {{ status.name }}
+                        </div>
+                        <div class="task-list">
+                            {% for task in tasks if task.status.name == status.name %}
+                                <div class="task-card">
+                                    <h4>{{ task.title }}</h4>
+                                    <p>Ответственный: {{ task.assigned_user.full_name }}</p>
+                                </div>
+                            {% endfor %}
+                            {% if not tasks|selectattr("status.name", "equalto", status.name)|list %}
+                                <button class="btn btn-create">
+                                    <i class="fas fa-plus"></i> Создать
+                                </button>
+                            {% endif %}
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        </div>
+    </main>
+</div>
+
+<script>
+    function toggleView(view) {
+        const summaryView = document.getElementById('summary-view');
+        const tasksView = document.getElementById('tasks-view');
+        const summaryBtn = document.getElementById('summary-btn');
+        const tasksBtn = document.getElementById('tasks-btn');
+
+        if (view === 'summary') {
+            summaryView.classList.remove('d-none');
+            tasksView.classList.add('d-none');
+            summaryBtn.classList.add('active-tab');
+            tasksBtn.classList.remove('active-tab');
+        } else {
+            summaryView.classList.add('d-none');
+            tasksView.classList.remove('d-none');
+            summaryBtn.classList.remove('active-tab');
+            tasksBtn.classList.add('active-tab');
+        }
+    }
+</script>
+{% endblock %}

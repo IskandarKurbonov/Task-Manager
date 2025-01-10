@@ -1,0 +1,80 @@
+{% extends "base.html" %}
+
+{% block title %}Настройки профиля{% endblock %}
+
+{% block content %}
+<div class="container mt-5 d-flex justify-content-between">
+    <!-- Карточка профиля слева -->
+    <div class="profile-settings-card" style="width: 350px;">
+        <h2 class="mb-4 text-center">Настройки профиля</h2>
+
+        <!-- Профиль пользователя -->
+        <div class="card shadow-sm mb-3">
+            <div class="card-body text-center">
+                {% if user.profile_picture %}
+                    <img src="{{ url_for('static', filename=user.profile_picture) }}" alt="Фото профиля" class="rounded-circle shadow-sm mb-3" width="120" height="120">
+                {% else %}
+                    <img src="{{ url_for('static', filename='users_profile/default_profile_picture.jpg') }}" alt="Фото профиля" class="rounded-circle shadow-sm mb-3" width="120" height="120">
+                {% endif %}
+                <p class="mb-1"><strong>{{ user.full_name }}</strong></p>
+                <p class="text-muted small mb-1">{{ user.username }}</p>
+                <p class="text-muted small">{{ user.email }}</p>
+            </div>
+        </div>
+
+        <!-- Загрузка фотографии профиля -->
+        <form method="POST" enctype="multipart/form-data" class="card shadow-sm mb-3">
+            <input type="hidden" name="form_type" value="profile_picture">
+            <div class="card-body">
+                <h5 class="card-title mb-3">Обновить фото профиля</h5>
+                <div class="file-input-wrapper mb-3">
+                    <label for="profile_picture" class="form-label d-block">Выберите файл</label>
+                    <div class="custom-file">
+                        <input type="file" class="custom-file-input" id="profile_picture" name="profile_picture" accept="image/*">
+                        <label class="custom-file-label text-muted" for="profile_picture">Выберите изображение...</label>
+                    </div>
+                </div>
+                <button type="submit" class="btn btn-primary w-100 btn-sm">Загрузить</button>
+            </div>
+        </form>
+    </div>
+
+    <!-- Форма редактирования профиля справа -->
+    <div class="profile-edit-card" style="width: 400px;">
+        <form method="POST">
+            <div class="card shadow-sm">
+                <div class="card-body">
+                    <h5 class="card-title mb-3">Редактировать профиль</h5>
+                    <div class="form-group mb-2">
+                        <label for="full_name" class="form-label small">Полное имя</label>
+                        <input type="text" class="form-control form-control-sm" id="full_name" name="full_name" value="{{ user.full_name }}" required>
+                    </div>
+                    <div class="form-group mb-2">
+                        <label for="email" class="form-label small">Электронная почта</label>
+                        <input type="email" class="form-control form-control-sm" id="email" name="email" value="{{ user.email }}" required>
+                    </div>
+                    <div class="form-group mb-2">
+                        <label for="phone_number" class="form-label small">Телефон</label>
+                        <input type="text" class="form-control form-control-sm" id="phone_number" name="phone_number" value="{{ user.phone_number }}">
+                    </div>
+                    <div class="form-group mb-3">
+                        <label for="position" class="form-label small">Должность</label>
+                        <input type="text" class="form-control form-control-sm" id="position" name="position" value="{{ user.position }}">
+                    </div>
+                    <button type="submit" class="btn btn-success w-100 btn-sm">Сохранить изменения</button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+    // Обновление названия файла при выборе
+    document.querySelectorAll('.custom-file-input').forEach(input => {
+        input.addEventListener('change', function () {
+            const fileName = this.files[0]?.name || "Выберите изображение...";
+            this.nextElementSibling.textContent = fileName;
+        });
+    });
+</script>
+{% endblock %}
