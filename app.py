@@ -1,12 +1,10 @@
 import logging
 import random
 import string
-from flask import Flask, render_template, request, redirect, url_for, flash
-from flask_login import LoginManager, current_user, login_required
-from models import db, User, Department, Role, Project, ProjectStatus, TaskStatus
-from routes import admin_required, main_routes
+from flask import Flask
+from flask_login import LoginManager, current_user
+from models import db, User,  Role, ProjectStatus, TaskStatus
 from hashlib import sha256
-from datetime import datetime
 
 # Создание приложения Flask
 app = Flask(__name__)
@@ -69,7 +67,7 @@ def initialize_project_statuses():
 
 # Инициализация статусов задач
 def initialize_task_statuses():
-    task_statuses = ['Не начат', 'Назначен', 'В процессе', 'Выполнено']
+    task_statuses = ['К выполнению', 'В процессе', 'Выполнено']
     for status in task_statuses:
         existing_status = TaskStatus.query.filter_by(name=status).first()
         if not existing_status:

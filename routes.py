@@ -445,6 +445,32 @@ def manager_dashboard():
     if request.method == 'POST':
         action = request.form.get('action')
 
+        if action == 'return_task':
+            task_id = request.form.get('task_id')
+            comment_content = request.form.get('comment_content')
+
+            task = Task.query.get(task_id)
+            if not task:
+                flash('Задача не найдена.', 'danger')
+                return redirect(url_for('main_routes.manager_dashboard'))
+
+            # Изменяем статус задачи на "На доработке"
+            task.status_id = TaskStatus.query.filter_by(name='На доработке').first().id
+            db.session.add(task)
+
+            # Добавляем комментарий
+            if comment_content:
+                comment = Comment(
+                    task_id=task.id,
+                    user_id=current_user.id,
+                    content=comment_content
+                )
+                db.session.add(comment)
+
+            db.session.commit()
+            flash('Задача успешно возвращена на доработку!', 'success')
+
+
         if action == 'add_comment':
             # Добавление комментария менеджером
             task_id = request.form.get('task_id')
@@ -635,7 +661,6 @@ def user_dashboard():
     return render_template('user_dashboard.html', projects=user_projects, users=users)
 
 
-
 # Профиль пользователя
 @main_routes.route('/profile', methods=['GET', 'POST'])
 @login_required
@@ -774,3 +799,30 @@ def create_task():
     return redirect(request.referrer or url_for('main_routes.main'))
 
 
+@main_routes.route('/return_task', methods=['POST'])
+@login_required
+@manager_required
+def return_task():
+    task_id = request.form.get('task_id')
+    comment_content = request.form.get('comment_content')
+
+    task = Task.query.get(task_id)
+    if not task:
+        flash('Задача не найдена.', 'danger')
+        return redirect(url_for('main_routes.manager_dashboard'))
+
+    # Изменяем статус задачи на "На доработке"
+    task.status_id = TaskStatus.query.filter_by(name='На доработке').first().id
+
+    # Добавляем комментарий, если указан
+    if comment_content:
+        comment = Comment(
+            task_id=task.id,
+            user_id=current_user.id,
+            content=comment_content
+        )
+        db.session.add(comment)
+
+    db.session.commit()
+    flash('Задача возвращена на доработку!', 'success')
+    return redirect(url_for('main_routes.manager_dashboard'))
