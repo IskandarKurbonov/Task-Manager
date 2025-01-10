@@ -6,11 +6,7 @@
   <component name="ChangeListManager">
     <list default="true" id="702d8c3b-0538-43ed-8f1f-7fced534c4fb" name="Changes" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app.py" beforeDir="false" afterPath="$PROJECT_DIR$/app.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/routes.py" beforeDir="false" afterPath="$PROJECT_DIR$/routes.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/static/styles/styles.css" beforeDir="false" afterPath="$PROJECT_DIR$/static/styles/styles.css" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/templates/base.html" beforeDir="false" afterPath="$PROJECT_DIR$/templates/base.html" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/templates/main.html" beforeDir="false" afterPath="$PROJECT_DIR$/templates/main.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/config.py" beforeDir="false" afterPath="$PROJECT_DIR$/config.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -21,7 +17,6 @@
     <option name="RECENT_TEMPLATES">
       <list>
         <option value="Python Script" />
-        <option value="HTML File" />
       </list>
     </option>
   </component>
@@ -39,30 +34,13 @@
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent"><![CDATA[{
-  "keyToString": {
-    "DefaultHtmlFileTemplate": "HTML File",
-    "Python.app.executor": "Run",
-    "Python.routes.executor": "Run",
-    "RunOnceActivity.OpenProjectViewOnStart": "true",
-    "RunOnceActivity.ShowReadmeOnStart": "true",
-    "git-widget-placeholder": "feature/new-version",
-    "last_opened_file_path": "C:/Users/Admin/OOP/Task-Manager/static"
+  <component name="PropertiesComponent">{
+  &quot;keyToString&quot;: {
+    &quot;RunOnceActivity.OpenProjectViewOnStart&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
+    &quot;git-widget-placeholder&quot;: &quot;master&quot;
   }
-}]]></component>
-  <component name="RecentsManager">
-    <key name="CopyFile.RECENT_KEYS">
-      <recent name="C:\Users\Admin\OOP\Task-Manager\static" />
-      <recent name="C:\Users\Admin\OOP\Task-Manager\users_profile\1" />
-    </key>
-    <key name="MoveFile.RECENT_KEYS">
-      <recent name="C:\Users\Admin\OOP\Task-Manager\static\styles" />
-      <recent name="C:\Users\Admin\OOP\Task-Manager\static\users_profile" />
-      <recent name="C:\Users\Admin\OOP\Task-Manager\static" />
-      <recent name="C:\Users\Admin\OOP\Task-Manager\projects\3" />
-      <recent name="C:\Users\Admin\OOP\Task-Manager\projects\2" />
-    </key>
-  </component>
+}</component>
   <component name="SharedIndexes">
     <attachedChunks>
       <set>
