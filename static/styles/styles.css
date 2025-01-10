@@ -68,6 +68,13 @@ body {
     color: #007bff;
 }
 
+.project-panel {
+    display: flex;
+    gap: 10px;
+    margin: 20px 0;
+}
+
+
 /* Основной контент */
 .content {
     margin-left: 270px;
@@ -87,23 +94,62 @@ body {
 .btn-tab {
     padding: 10px 20px;
     font-size: 1rem;
-    background-color: #f8f9fa;
-    border: 1px solid #e5e5e5;
-    border-radius: 8px;
+    background-color: transparent;
+    border: none;
     cursor: pointer;
     transition: all 0.3s ease;
+    color: #34495e;
+    position: relative;
 }
 
 .btn-tab:hover {
-    background-color: #007bff;
-    color: #fff;
+    color: #007bff;
 }
 
 .btn-tab.active-tab {
-    background-color: #007bff;
-    color: #fff;
-    border-color: #007bff;
+    color: #007bff;
+    font-weight: bold;
 }
+
+.btn-tab .tab-indicator {
+    position: absolute;
+    bottom: -3px;
+    left: 0;
+    width: 100%;
+    height: 3px;
+    background-color: #007bff;
+    visibility: hidden;
+}
+
+.btn-tab.active-tab .tab-indicator {
+    visibility: visible;
+}
+
+.card {
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.card:hover {
+    transform: scale(1.02);
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+}
+
+.card-title {
+    color: #333;
+    font-weight: bold;
+}
+
+.card-subtitle {
+    color: #777;
+}
+
+.task-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+}
+
 
 /* Карточки сводок */
 .summary-cards {
@@ -158,26 +204,31 @@ body {
     border: 1px solid #e5e5e5;
     border-radius: 8px;
     padding: 20px;
-    width: calc(25% - 20px); /* Четыре карточки в ряд */
+    width: calc(25% - 20px);
+    text-align: center;
     box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
     display: flex;
     flex-direction: column;
-    justify-content: flex-start; /* Выровнять содержимое сверху */
-    gap: 15px;
+    justify-content: space-between;
+    gap: 10px;
 }
 
-/* Бейдж статуса */
-.status-header {
-    background-color: transparent; /* Сохранить прозрачность */
-    padding: 10px;
-    border-radius: 8px;
-    font-size: 1rem;
-    font-weight: bold;
-    text-align: left;
+/* Бейдж статуса внутри карточки задачи */
+.task-status-badge {
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    background-color: #007bff; /* Цвет по умолчанию */
     color: #fff;
+    padding: 5px 12px;
+    font-size: 0.8rem;
+    font-weight: bold;
+    border-radius: 20px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    text-transform: uppercase;
 }
 
-/* Цвета бейджей статусов */
+/* Цвета для различных статусов */
 .status-grey {
     background-color: rgba(108, 117, 125, 0.9);
 }
@@ -194,21 +245,10 @@ body {
     background-color: rgba(40, 167, 69, 0.9);
 }
 
-/* Задачи в карточке */
-.task-card {
-    background-color: #f8f9fa;
-    border: 1px solid #e5e5e5;
-    border-radius: 8px;
-    padding: 10px;
-    text-align: left;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-    margin-bottom: 10px;
-    font-size: 0.85rem;
-}
 
 /* Кнопка создания задачи */
 .btn-create {
-    margin-top: auto; /* Позиция кнопки внизу карточки */
+    margin-top: auto;
     padding: 10px;
     font-size: 1rem;
     background-color: #28a745;
@@ -221,7 +261,7 @@ body {
 
 .btn-create:hover {
     background-color: #218838;
-    transform: translateY(-2px); /* Легкий эффект поднятия */
+    transform: translateY(-2px);
 }
 
 /* Навигационная панель */
@@ -262,35 +302,6 @@ body {
     transition: background-color 0.3s ease, color 0.3s ease;
 }
 
-.navbar .btn-outline-dark {
-    color: #333;
-    border-color: #ccc;
-}
-
-.navbar .btn-outline-dark:hover {
-    background-color: #333;
-    color: #fff;
-    border-color: #333;
-}
-
-.navbar .btn-secondary {
-    background-color: #6c757d;
-    color: #fff;
-}
-
-.navbar .btn-secondary:hover {
-    background-color: #5a6268;
-}
-
-.navbar .btn-danger {
-    background-color: #dc3545;
-    color: #fff;
-}
-
-.navbar .btn-danger:hover {
-    background-color: #c82333;
-}
-
 /* Темная тема */
 .dark-mode {
     background-color: #2c3e50;
@@ -301,32 +312,10 @@ body {
     background-color: #34495e;
 }
 
-.dark-mode .navbar .brand-name,
-.dark-mode .navbar .btn {
-    color: #ecf0f1;
-}
-
-.dark-mode .sidebar {
-    background-color: #34495e;
-    color: #ecf0f1;
-}
-
-.dark-mode .project-link {
-    color: #ecf0f1;
-}
-
-.dark-mode .project-link:hover {
-    background-color: #007bff;
-}
-
-.dark-mode .summary-card {
-    background-color: #3a3a3a;
-    color: #ecf0f1;
-    border: 1px solid #555;
-}
-
+.dark-mode .summary-card,
 .dark-mode .status-card {
     background-color: #3a3a3a;
+    color: #ecf0f1;
     border-color: #555;
 }
 
@@ -335,6 +324,20 @@ body {
     color: #ecf0f1;
 }
 
-.dark-mode .btn-create:hover {
-    background-color: #1e7e34;
+
+#calendar {
+    background: #ffffff;
+    border: 1px solid #e5e5e5;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    border-radius: 8px;
+    height: auto;
+    margin-top: 20px;
 }
+
+/* Выделение текущего дня */
+.fc-day-today {
+    background-color: rgba(0, 123, 255, 0.1);
+    border-radius: 50%;
+    font-weight: bold;
+}
+

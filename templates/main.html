@@ -2,13 +2,18 @@
 
 {% block content %}
 <div class="main-container">
-    <!-- Боковая панель -->
+    <!-- Sidebar -->
     <aside class="sidebar">
-        <h2>Проекты</h2>
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h2 class="mb-0">Проекты</h2>
+            {% if current_user.role.name in ['admin', 'manager'] %}
+                <button class="btn btn-sm btn-outline-secondary" onclick="showCreateProjectModal()">+</button>
+            {% endif %}
+        </div>
         <ul class="project-list">
             {% for project in projects %}
                 <li>
-                    <a href="#" class="project-link" onclick="loadProject('{{ project.id }}')">
+                    <a href="#" class="project-link" onclick="selectProject('{{ project.id }}', '{{ project.name }}')">
                         <span class="project-icon"><i class="fas fa-folder"></i></span>
                         {{ project.name }}
                     </a>
@@ -17,88 +22,299 @@
         </ul>
     </aside>
 
-    <!-- Основной контент -->
+    <!-- Create Project Modal -->
+    <div class="modal fade" id="createProjectModal" tabindex="-1" role="dialog" aria-labelledby="createProjectModalLabel" aria-hidden="true">
+        <div class="modal-dialog" role="document">
+            <form method="POST" action="{{ url_for('main_routes.create_project') }}">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="createProjectModalLabel">Создать проект</h5>
+                        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                            <span aria-hidden="true">&times;</span>
+                        </button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="form-group">
+                            <label for="project-name">Название проекта</label>
+                            <input type="text" class="form-control" id="project-name" name="project_name" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="project-description">Описание</label>
+                            <textarea class="form-control" id="project-description" name="description" required></textarea>
+                        </div>
+                        <div class="form-group">
+                            <label for="status-id">Статус проекта</label>
+                            <select class="form-control" id="status-id" name="status_id" required>
+                                {% for status in project_statuses %}
+                                    <option value="{{ status.id }}">{{ status.name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        {% if current_user.role.name == 'admin' %}
+                        <div class="form-group">
+                            <label for="manager-id">Ответственный менеджер</label>
+                            <select class="form-control" id="manager-id" name="manager_id" required>
+                                {% for user in managers %}
+                                    <option value="{{ user.id }}">{{ user.full_name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        {% endif %}
+                        <div class="form-group">
+                            <label for="project-deadline">Срок выполнения</label>
+                            <input type="date" class="form-control" id="project-deadline" name="deadline" required>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="submit" class="btn btn-primary">Создать</button>
+                        <button type="button" class="btn btn-secondary" data-dismiss="modal">Отмена</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Main Content -->
     <main class="content">
-        <!-- Панель управления проектом -->
-        <div class="project-panel">
-            <button id="summary-btn" class="btn btn-tab" onclick="toggleView('summary')">
-                Сводка
+        <!-- Project Panel -->
+        <div class="project-panel" id="project-panel">
+            <button id="summary-btn" class="btn btn-tab active-tab" onclick="toggleView('summary')">
+                <i class="fas fa-chart-bar"></i> Сводка
             </button>
-            <button id="tasks-btn" class="btn btn-tab" onclick="toggleView('tasks')">
-                Задачи
+            <button id="tasks-btn" class="btn btn-tab d-none" onclick="toggleView('tasks')">
+                <i class="fas fa-tasks"></i> Задачи
+            </button>
+            <button id="calendar-btn" class="btn btn-tab" onclick="toggleView('calendar')">
+                <i class="fas fa-calendar-alt"></i> Календарь
             </button>
         </div>
-
         <!-- Сводка -->
         <div id="summary-view" class="summary-cards">
-            <div class="summary-card">
-                <h3><i class="fas fa-users"></i> Пользователи</h3>
-                <p>{{ users_count }} зарегистрировано</p>
-            </div>
+
+            <!-- Количество проектов за неделю -->
             <div class="summary-card">
                 <h3><i class="fas fa-folder-plus"></i> Созданные проекты</h3>
                 <p>{{ new_projects_count }} за последние 7 дней</p>
             </div>
+
+            <!-- Количество завершенных проектов -->
             <div class="summary-card">
                 <h3><i class="fas fa-check-circle"></i> Выполненные проекты</h3>
                 <p>{{ completed_projects_count }} завершено</p>
             </div>
+
+            <!-- Статистика задач -->
             <div class="summary-card">
-                <h3><i class="fas fa-tasks"></i> Активность задач</h3>
-                <p>{{ task_activity_count }} изменений статуса</p>
+                <h3><i class="fas fa-chart-pie"></i> Статистика задач</h3>
+                <canvas id="tasksChart"></canvas>
             </div>
+
+            <!-- Активность пользователей -->
             <div class="summary-card">
-                <h3><i class="fas fa-chart-pie"></i> Нагрузка пользователей</h3>
-                <p>{{ user_load }} задач на пользователя</p>
+                <h3><i class="fas fa-user-clock"></i> Активность пользователей</h3>
+                <p>{{ task_activity_count }} задач в процессе выполнения</p>
             </div>
         </div>
-
-        <!-- Задачи -->
+        <!-- Tasks -->
         <div id="tasks-view" class="task-view d-none">
             <div class="status-list">
                 {% for status in task_statuses %}
-                    <div class="status-card">
-                        <div class="status-header status-{{ status.color }}">
-                            {{ status.name }}
-                        </div>
-                        <div class="task-list">
-                            {% for task in tasks if task.status.name == status.name %}
-                                <div class="task-card">
-                                    <h4>{{ task.title }}</h4>
-                                    <p>Ответственный: {{ task.assigned_user.full_name }}</p>
-                                </div>
-                            {% endfor %}
-                            {% if not tasks|selectattr("status.name", "equalto", status.name)|list %}
-                                <button class="btn btn-create">
-                                    <i class="fas fa-plus"></i> Создать
-                                </button>
-                            {% endif %}
-                        </div>
+                <div class="status-card">
+                    <div class="status-header status-{{ status.color }}">
+                        {{ status.name }}
                     </div>
+                   <div class="task-list">
+                        {% for task in tasks if task.status.name == status.name %}
+                        <div class="card mb-3" style="border: 1px solid #ccc; border-radius: 8px;">
+                            <div class="card-body">
+                                <h5 class="card-title">{{ task.title }}</h5>
+                                <h6 class="card-subtitle mb-2 text-muted">Статус: {{ task.status.name }}</h6>
+                                <p class="card-text">
+                                    <strong>Описание:</strong> {{ task.description or "Нет описания" }}<br>
+                                    <strong>Приоритет:</strong> {{ task.priority }}<br>
+                                    <strong>Дедлайн:</strong> {{ task.deadline.strftime('%d.%m.%Y') if task.deadline else "Не указан" }}
+                                </p>
+                                <p><strong>Ответственные:</strong></p>
+                                <ul>
+                                    {% for user_relation in task.assigned_users %}
+                                        <li>{{ user_relation.user.full_name }}</li>
+                                    {% endfor %}
+                                </ul>
+                                <button class="btn btn-sm btn-primary" onclick="viewTaskDetails('{{ task.id }}')">Подробнее</button>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    <button class="btn btn-sm btn-outline-primary mt-2" onclick="showCreateTaskModal('{{ status.id }}')">
+                        + Создать
+                    </button>
+                </div>
                 {% endfor %}
             </div>
+        </div>
+
+        <!-- Task Details Modal -->
+        <div class="modal fade" id="taskDetailsModal" tabindex="-1" role="dialog" aria-labelledby="taskDetailsModalLabel" aria-hidden="true">
+            <div class="modal-dialog" role="document">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="taskDetailsModalLabel">Детали задачи</h5>
+                        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                            <span aria-hidden="true">&times;</span>
+                        </button>
+                    </div>
+                    <div class="modal-body" id="taskDetailsBody">
+                        <!-- Task details will be dynamically loaded here -->
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Модальное окно создания задачи -->
+        <div class="modal fade" id="createTaskModal" tabindex="-1" role="dialog" aria-labelledby="createTaskModalLabel" aria-hidden="true">
+            <div class="modal-dialog" role="document">
+                <form method="POST" action="{{ url_for('main_routes.create_task') }}">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title" id="createTaskModalLabel">Создать задачу</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body">
+                            <div class="form-group">
+                                <label for="task-title">Название задачи</label>
+                                <input type="text" class="form-control" id="task-title" name="task_title" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="task-description">Описание</label>
+                                <textarea class="form-control" id="task-description" name="task_description"></textarea>
+                            </div>
+                            <div class="form-group">
+                                <label for="task-priority">Приоритет</label>
+                                <select class="form-control" id="task-priority" name="task_priority">
+                                    <option value="1">Низкий</option>
+                                    <option value="2">Средний</option>
+                                    <option value="3">Высокий</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="task-status">Статус</label>
+                                <select class="form-control" id="task-status" name="task_status_id" required>
+                                    {% for status in task_statuses %}
+                                        <option value="{{ status.id }}">{{ status.name }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="task-assigned">Ответственные</label>
+                                <select class="form-control" id="task-assigned" name="assigned_users" multiple required>
+                                    {% for user in available_users %}
+                                        <option value="{{ user.id }}">{{ user.full_name }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="task-deadline">Дедлайн</label>
+                                <input type="date" class="form-control" id="task-deadline" name="task_deadline" required>
+                            </div>
+                            <input type="hidden" id="project-id" name="project_id" value="{{ selected_project.id }}">
+                        </div>
+                        <div class="modal-footer">
+                            <button type="submit" class="btn btn-primary">Создать</button>
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+
+
+        <!-- Calendar -->
+        <div id="calendar-view" class="calendar-view d-none">
+            <div id="calendar"></div>
         </div>
     </main>
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
-    function toggleView(view) {
-        const summaryView = document.getElementById('summary-view');
-        const tasksView = document.getElementById('tasks-view');
-        const summaryBtn = document.getElementById('summary-btn');
-        const tasksBtn = document.getElementById('tasks-btn');
+    let selectedProjectId = null;
 
-        if (view === 'summary') {
-            summaryView.classList.remove('d-none');
-            tasksView.classList.add('d-none');
-            summaryBtn.classList.add('active-tab');
-            tasksBtn.classList.remove('active-tab');
-        } else {
-            summaryView.classList.add('d-none');
-            tasksView.classList.remove('d-none');
-            summaryBtn.classList.remove('active-tab');
-            tasksBtn.classList.add('active-tab');
+    // Функция для открытия модального окна создания задачи
+    function showCreateTaskModal(statusId) {
+        console.log(`Открытие модального окна для создания задачи. Статус ID: ${statusId}, Проект ID: ${selectedProjectId}`);
+
+        if (!selectedProjectId) {
+            alert('Сначала выберите проект!');
+            return;
         }
+
+        document.getElementById('task-status').value = statusId; // Установить статус задачи
+        document.getElementById('project-id').value = selectedProjectId; // Установить ID проекта
+        new bootstrap.Modal(document.getElementById('createTaskModal')).show(); // Показать модальное окно
     }
+
+    // Функция выбора проекта
+    function selectProject(projectId, projectName) {
+        selectedProjectId = projectId;
+        document.getElementById('tasks-btn').classList.remove('d-none');
+        console.log(`Проект выбран: ${projectName} (ID: ${projectId})`);
+    }
+
+    // Функция переключения между вкладками (сводка, задачи, календарь)
+    function toggleView(view) {
+        // Скрыть все вьюшки
+        document.getElementById('summary-view')?.classList.add('d-none');
+        document.getElementById('tasks-view')?.classList.add('d-none');
+        document.getElementById('calendar-view')?.classList.add('d-none');
+
+        // Снять активное состояние с кнопок
+        document.getElementById('summary-btn')?.classList.remove('active-tab');
+        document.getElementById('tasks-btn')?.classList.remove('active-tab');
+        document.getElementById('calendar-btn')?.classList.remove('active-tab');
+
+        // Показать выбранный вью и активировать соответствующую кнопку
+        document.getElementById(`${view}-view`)?.classList.remove('d-none');
+        document.getElementById(`${view}-btn`)?.classList.add('active-tab');
+    }
+
+    // Установка графика задач
+    document.addEventListener('DOMContentLoaded', function () {
+        const ctx = document.getElementById('tasksChart').getContext('2d');
+        const tasksChart = new Chart(ctx, {
+            type: 'doughnut',
+            data: {
+                labels: ['Выполнено', 'В процессе', 'Назначено'],
+                datasets: [{
+                    label: 'Статус задач',
+                    data: [{{ completed_tasks_count }}, {{ in_progress_tasks_count }}, {{ assigned_tasks_count }}],
+                    backgroundColor: ['#28a745', '#ff9800', '#007bff'],
+                    hoverBackgroundColor: ['#218838', '#e68a00', '#0056b3'],
+                    borderColor: ['#ffffff', '#ffffff', '#ffffff'],
+                    borderWidth: 1,
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: { position: 'top' },
+                    tooltip: {
+                        callbacks: {
+                            label: function (context) {
+                                let label = context.label || '';
+                                if (context.raw !== undefined) {
+                                    label += `: ${context.raw}`;
+                                }
+                                return label;
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    });
+
+
+
 </script>
 {% endblock %}

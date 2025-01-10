@@ -78,6 +78,11 @@ def initialize_task_statuses():
     db.session.commit()
 
 
+@app.context_processor
+def inject_user():
+    return {'user': current_user}
+
+
 # Инициализация учетной записи администратора
 def initialize_admin_account():
     admin_role = Role.query.filter_by(name='admin').first()
