@@ -820,25 +820,25 @@ def add_comment():
     Создание комментария к задаче.
     """
     try:
-        # Получение данных из формы
-        task_id = request.form.get('task_id')
-        content = request.form.get('content')
+        if not request.is_json:
+            return jsonify({'success': False, 'message': 'Неверный формат запроса. Ожидается JSON.'}), 400
+
+        data = request.get_json()
+        task_id = data.get('task_id')
+        content = data.get('content')
 
         # Проверка входных данных
         if not task_id or not content:
-            flash('Укажите задачу и содержимое комментария!', 'danger')
-            return redirect(request.referrer)
+            return jsonify({'success': False, 'message': 'Укажите задачу и содержимое комментария!'}), 400
 
         # Проверка существования задачи
         task = Task.query.get(task_id)
         if not task:
-            flash('Задача не найдена!', 'danger')
-            return redirect(request.referrer)
+            return jsonify({'success': False, 'message': 'Задача не найдена!'}), 404
 
-        # Проверка доступа (пользователь должен быть ответственным за задачу или администратором)
+        # Проверка доступа
         if current_user.role.name != 'admin' and not any(user.user_id == current_user.id for user in task.assigned_users):
-            flash('Вы не можете комментировать эту задачу!', 'danger')
-            return redirect(request.referrer)
+            return jsonify({'success': False, 'message': 'Вы не можете комментировать эту задачу!'}), 403
 
         # Создание нового комментария
         new_comment = Comment(
@@ -850,13 +850,18 @@ def add_comment():
         db.session.add(new_comment)
         db.session.commit()
 
-        flash('Комментарий успешно добавлен!', 'success')
-        return redirect(request.referrer)
+        return jsonify({
+            'success': True,
+            'message': 'Комментарий успешно добавлен!',
+            'user_profile_picture': url_for('static', filename=current_user.profile_picture or 'users/default_profile_picture.jpg'),
+            'user_full_name': current_user.full_name,
+            'content': new_comment.content,
+            'created_at': new_comment.created_at.strftime('%d.%m.%Y %H:%M')
+        })
 
     except Exception as e:
         db.session.rollback()
-        flash(f'Ошибка при добавлении комментария: {str(e)}', 'danger')
-        return redirect(request.referrer)
+        return jsonify({'success': False, 'message': f'Ошибка: {str(e)}'}), 500
 
 
 @main_routes.route('/return_task', methods=['POST'])
