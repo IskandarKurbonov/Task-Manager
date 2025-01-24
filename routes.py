@@ -4,10 +4,14 @@ from datetime import timedelta
 from hashlib import sha256
 from flask_login import login_user, logout_user
 import os
-from flask import Blueprint, render_template, request, redirect, url_for, flash, abort
+from flask import Blueprint, render_template, request, redirect, url_for, flash, abort, jsonify
 from flask_login import login_required, current_user
+from sqlalchemy.orm import joinedload
+
+from app import logger
 from models import *
 from functools import wraps
+from sqlalchemy.exc import SQLAlchemyError
 
 auth_routes = Blueprint('auth_routes', __name__)
 main_routes = Blueprint('main_routes', __name__)
@@ -65,49 +69,44 @@ def verify_password(stored_password_hash, provided_password):
 @main_routes.route('/main', methods=['GET'])
 @login_required
 def main():
-    # Получение доступных пользователей для назначения задач
-    available_users = []
-    if current_user.role.name in ['admin', 'manager']:
-        available_users = User.query.filter(User.role_id != Role.query.filter_by(name='admin').first().id).all()
+    try:
+        # Получение ID проекта из параметров запроса
+        project_id = request.args.get('project_id', type=int)
+        selected_project = None
 
-    # Получение проектов для текущего пользователя
-    if current_user.role.name == 'admin':
-        projects = Project.query.all()
-    elif current_user.role.name == 'manager':
-        projects = Project.query.filter_by(manager_id=current_user.id).all()
-    elif current_user.role.name == 'user':
-        tasks = Task.query.filter(Task.assigned_users.any(user_id=current_user.id)).all()
-        projects = {task.project for task in tasks if task.project}
-    else:
-        projects = []
+        # Если ID проекта указан, находим соответствующий проект
+        if project_id:
+            selected_project = Project.query.get_or_404(project_id)
 
-    # Выбор первого проекта, если он есть
-    selected_project = projects[0] if projects else None
+        # Получение всех проектов, доступных пользователю
+        if current_user.role.name == 'admin':
+            projects = Project.query.all()
+        else:
+            projects = (
+                Project.query.join(ProjectUser)
+                .filter(ProjectUser.user_id == current_user.id)
+                .all()
+            )
 
-    # Получение статусов задач
-    task_statuses = TaskStatus.query.all()
+        # Получение всех статусов задач
+        task_statuses = TaskStatus.query.all()
 
-    # Получение статусов проектов
-    project_statuses = ProjectStatus.query.all()
+        # Получение всех пользователей (для назначения задач)
+        all_users = User.query.all()
 
-    tasks = Task.query.filter(Task.project_id == selected_project.id).all() if selected_project else []
+        # Передаем данные в шаблон
+        return render_template(
+            'main.html',
+            projects=projects,  # Список проектов
+            selected_project=selected_project,  # Текущий выбранный проект
+            task_statuses=task_statuses,  # Список статусов задач
+            all_users=all_users  # Все пользователи (для назначения задач)
+        )
 
-    return render_template(
-        'main.html',
-        projects=projects,
-        tasks=tasks,  # Передача задач
-        task_statuses=task_statuses,
-        project_statuses=project_statuses,
-        available_users=available_users,
-        selected_project=selected_project,
-        users_count=User.query.count(),
-        new_projects_count=Project.query.filter(Project.created_at >= datetime.utcnow() - timedelta(days=7)).count(),
-        completed_projects_count=Project.query.filter_by(status_id=3).count(),
-        task_activity_count=Task.query.filter(Task.status_id != 1).count(),
-        completed_tasks_count=Task.query.filter_by(status_id=3).count(),
-        in_progress_tasks_count=Task.query.filter_by(status_id=2).count(),
-        assigned_tasks_count=Task.query.filter_by(status_id=1).count(),
-    )
+    except Exception as e:
+        # Возвращаем сообщение об ошибке
+        return f"Ошибка при загрузке страницы: {str(e)}", 500
+
 
 
 # Маршрут для входа
@@ -713,37 +712,32 @@ def profile():
 @main_routes.route('/create_project', methods=['POST'])
 @login_required
 def create_project():
-    # Проверка роли пользователя
-    if current_user.role.name not in ['admin', 'manager']:
-        flash('У вас нет прав для создания проекта!', 'danger')
-        return redirect(url_for('main_routes.main'))
-
-    # Получение данных из формы
-    name = request.form.get('project_name')
+    # Получаем данные из формы
+    name = request.form.get('name')
     description = request.form.get('description')
     deadline = request.form.get('deadline')
-    manager_id = (
-        request.form.get('manager_id') if current_user.role.name == 'admin' else current_user.id
-    )
-    status_id = request.form.get('status_id') or 1  # Укажите статус по умолчанию, например, 1 ("Назначено")
+    manager_id = request.form.get('manager_id')
 
-    # Проверка заполненности обязательных полей
-    if not all([name, description, deadline]):
-        flash('Все поля формы должны быть заполнены!', 'danger')
+    if not name or not description:
+        flash('Название и описание обязательны для заполнения', 'danger')
         return redirect(url_for('main_routes.main'))
 
-    # Создание проекта
     try:
+        # Преобразование даты
+        deadline_date = datetime.strptime(deadline, '%Y-%m-%d') if deadline else None
+
+        # Создаём новый проект
         new_project = Project(
             name=name,
             description=description,
-            manager_id=manager_id,
-            status_id=status_id,  # Указание статуса
-            deadline=deadline,
             created_at=datetime.utcnow(),
+            deadline=deadline_date,
+            manager_id=manager_id,
+            status_id=1  # Укажите ID для статуса по умолчанию, например, "Новый"
         )
         db.session.add(new_project)
         db.session.commit()
+
         flash('Проект успешно создан!', 'success')
     except Exception as e:
         db.session.rollback()
@@ -751,52 +745,118 @@ def create_project():
 
     return redirect(url_for('main_routes.main'))
 
-
 @main_routes.route('/create_task', methods=['POST'])
 @login_required
 def create_task():
-    if current_user.role.name not in ['admin', 'manager']:
-        flash('У вас нет прав для создания задач!', 'danger')
-        return redirect(request.referrer or url_for('main_routes.main'))
-
-    # Получение данных из формы
-    title = request.form.get('task_title')
-    description = request.form.get('task_description', '')  # Описание необязательно
-    priority = int(request.form.get('task_priority', 1))  # Приоритет, по умолчанию 1
-    status_id = int(request.form.get('task_status_id', 1))  # Статус, по умолчанию 1 ("Назначено")
-    assigned_user_ids = request.form.getlist('assigned_users')  # Список ответственных
-    deadline = request.form.get('task_deadline')
-    project_id = request.form.get('project_id')  # ID проекта, должно быть обязательным
-
-    if not all([title, project_id, deadline]):
-        flash('Название задачи, проект и дедлайн обязательны для заполнения!', 'danger')
-        return redirect(request.referrer or url_for('main_routes.main'))
-
-    # Создание задачи
     try:
+        # Логирование данных для отладки
+        print(f"Форма: {request.form}")
+        print(f"Пользователь: {current_user.username}, Роль: {current_user.role.name}")
+
+        # Получаем данные из формы
+        title = request.form.get('title')
+        description = request.form.get('description')
+        project_id = request.form.get('project_id')
+        status_id = request.form.get('status_id')
+        priority = int(request.form.get('priority', 1))
+        deadline = request.form.get('deadline')
+        assigned_user_ids = request.form.getlist('assigned_user_ids')
+
+        # Проверяем, что обязательные поля заполнены
+        if not title or not project_id or not status_id:
+            flash('Заполните все обязательные поля!', 'danger')
+            return redirect(url_for('main_routes.main', project_id=project_id))
+
+        # Проверяем существование проекта
+        project = Project.query.get_or_404(project_id)
+        print(f"Проект найден: {project.name}")
+
+        # Проверяем права доступа
+        if current_user.role.name == 'manager':
+            # Менеджер может создавать задачи только в проектах, где он является ответственным
+            if project.manager_id != current_user.id:
+                flash('Вы можете создавать задачи только в проектах, где вы являетесь ответственным.', 'danger')
+                return redirect(url_for('main_routes.main', project_id=project_id))
+
+        # Проверяем статус задачи
+        status = TaskStatus.query.get(status_id)
+        if not status:
+            flash('Некорректный статус задачи!', 'danger')
+            return redirect(url_for('main_routes.main', project_id=project_id))
+
+        # Создаем новую задачу
         new_task = Task(
             title=title,
             description=description,
-            priority=priority,
-            status_id=status_id,
             project_id=project_id,
-            deadline=deadline,
+            status_id=status_id,
+            priority=priority,
+            deadline=datetime.strptime(deadline, '%Y-%m-%d') if deadline else None
         )
         db.session.add(new_task)
-        db.session.flush()  # Присваиваем ID задаче до фиксации транзакции
+        db.session.flush()  # Сохраняем задачу в базе для получения ID
 
-        # Добавление назначенных пользователей
+        # Привязываем пользователей к задаче
         for user_id in assigned_user_ids:
             task_user = TaskUser(task_id=new_task.id, user_id=user_id)
             db.session.add(task_user)
 
+        # Сохраняем изменения в базе данных
         db.session.commit()
         flash('Задача успешно создана!', 'success')
+        return redirect(url_for('main_routes.main', project_id=project_id))
+
+    except Exception as e:
+        # В случае ошибки откатываем изменения и выводим сообщение
+        db.session.rollback()
+        print(f"Ошибка при создании задачи: {str(e)}")
+        flash(f'Ошибка при создании задачи: {str(e)}', 'danger')
+        return redirect(url_for('main_routes.main', project_id=project_id))
+
+@main_routes.route('/add_comment', methods=['POST'])
+@login_required
+def add_comment():
+    """
+    Создание комментария к задаче.
+    """
+    try:
+        # Получение данных из формы
+        task_id = request.form.get('task_id')
+        content = request.form.get('content')
+
+        # Проверка входных данных
+        if not task_id or not content:
+            flash('Укажите задачу и содержимое комментария!', 'danger')
+            return redirect(request.referrer)
+
+        # Проверка существования задачи
+        task = Task.query.get(task_id)
+        if not task:
+            flash('Задача не найдена!', 'danger')
+            return redirect(request.referrer)
+
+        # Проверка доступа (пользователь должен быть ответственным за задачу или администратором)
+        if current_user.role.name != 'admin' and not any(user.user_id == current_user.id for user in task.assigned_users):
+            flash('Вы не можете комментировать эту задачу!', 'danger')
+            return redirect(request.referrer)
+
+        # Создание нового комментария
+        new_comment = Comment(
+            task_id=task.id,
+            user_id=current_user.id,
+            content=content,
+            created_at=datetime.utcnow()
+        )
+        db.session.add(new_comment)
+        db.session.commit()
+
+        flash('Комментарий успешно добавлен!', 'success')
+        return redirect(request.referrer)
+
     except Exception as e:
         db.session.rollback()
-        flash(f'Ошибка при создании задачи: {str(e)}', 'danger')
-
-    return redirect(request.referrer or url_for('main_routes.main'))
+        flash(f'Ошибка при добавлении комментария: {str(e)}', 'danger')
+        return redirect(request.referrer)
 
 
 @main_routes.route('/return_task', methods=['POST'])

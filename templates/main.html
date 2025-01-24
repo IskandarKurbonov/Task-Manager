@@ -1,320 +1,500 @@
-{% extends 'base.html' %}
+{% extends "base.html" %}
+
+{% block title %}Проекты{% endblock %}
 
 {% block content %}
-<div class="main-container">
-    <!-- Sidebar -->
-    <aside class="sidebar">
-        <div class="d-flex justify-content-between align-items-center mb-3">
-            <h2 class="mb-0">Проекты</h2>
-            {% if current_user.role.name in ['admin', 'manager'] %}
-                <button class="btn btn-sm btn-outline-secondary" onclick="showCreateProjectModal()">+</button>
+<div class="container-fluid">
+    <div class="row">
+        <!-- Левая панель проектов -->
+        <div class="col-md-3 px-3 py-4 shadow-sm" style="height: 100vh; position: fixed; border-radius: 15px; background-color: #e3f2fd;">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h5 class="font-weight-bold">Проекты</h5>
+                <button class="btn btn-sm btn-primary" data-toggle="modal" data-target="#createProjectModal">+</button>
+            </div>
+            <ul class="list-group list-group-flush">
+                {% if projects|length > 0 %}
+                    {% for project in projects %}
+                    <li class="d-flex align-items-center py-2" style="border-bottom: 1px solid #ddd;">
+                        <i class="fas fa-folder text-primary mr-2 project-icon" data-project-id="{{ project.id }}"></i>
+                        <a href="{{ url_for('main_routes.main', project_id=project.id) }}" class="text-decoration-none text-dark">{{ project.name }}</a>
+                    </li>
+                    {% endfor %}
+                {% else %}
+                    <li class="text-center text-muted py-2" style="border: none;">Нет доступных проектов</li>
+                {% endif %}
+            </ul>
+        </div>
+
+        <!-- Основное содержимое -->
+        <div class="col-md-8 offset-md-3" style="font-family: 'Arial', sans-serif; padding-left: 20px;">
+            {% if selected_project %}
+            <div class="mt-4">
+                <ul class="nav nav-tabs mb-4" id="projectTabs" role="tablist" style="border-bottom: 2px solid #ddd;">
+                    <li class="nav-item">
+                        <a class="nav-link active" id="description-tab" data-toggle="tab" href="#description" role="tab" aria-controls="description" aria-selected="true" style="font-weight: bold; color: #007bff;">
+                            <i class="fas fa-info-circle mr-2"></i>Описание
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" id="tasks-tab" data-toggle="tab" href="#tasks" role="tab" aria-controls="tasks" aria-selected="false" style="font-weight: bold; color: #28a745;">
+                            <i class="fas fa-tasks mr-2"></i>Задачи
+                        </a>
+                    </li>
+                </ul>
+                <div class="tab-content" id="projectTabsContent">
+                    <!-- Описание проекта -->
+                    <div class="tab-pane fade show active" id="description" role="tabpanel" aria-labelledby="description-tab" style="background-color: #e3f2fd; padding: 20px; border-radius: 10px;">
+                        <h1>{{ selected_project.name }}</h1>
+                        <p class="text-muted"><i class="fas fa-file-alt" style="color: #28a745;"></i> {{ selected_project.description }}</p>
+                        <p><i class="fas fa-calendar-alt" style="color: #ffc107;"></i> <strong>Срок завершения:</strong> {{ selected_project.deadline.strftime('%d.%m.%Y') if selected_project.deadline else 'Не установлен' }}</p>
+                        <p class="d-flex align-items-center">
+                            <i class="fas fa-user-tie" style="color: #17a2b8;"></i>
+                            <strong class="ml-2">Менеджер:</strong>
+                            {% if selected_project.manager %}
+                                <a href="#" data-toggle="modal" data-target="#managerInfoModal" class="d-flex align-items-center text-decoration-none ml-2">
+                                    <img src="{{ url_for('static', filename=selected_project.manager.profile_picture or 'users/default_profile_picture.jpg') }}"
+                                         alt="Фото менеджера"
+                                         class="rounded-circle mr-2"
+                                         style="width: 30px; height: 30px; object-fit: cover;">
+                                    <span>{{ selected_project.manager.full_name }}</span>
+                                </a>
+                            {% else %}
+                                <span class="ml-2">Не назначен</span>
+                            {% endif %}
+                        </p>
+                        <!-- Статистика задач -->
+                        <div class="mt-4" style="background-color: #f8f9fa; padding: 20px; border-radius: 10px;">
+                            <h4 class="text-center">Статистика задач</h4>
+                            <canvas id="taskStatsChart" style="max-height: 300px;"></canvas>
+                        </div>
+                    </div>
+                    <!-- Задачи проекта -->
+                    <div class="tab-pane fade" id="tasks" role="tabpanel" aria-labelledby="tasks-tab" style="background-color: #d4edda; padding: 20px; border-radius: 10px;">
+                        <h2 class="text-center">Задачи</h2>
+
+                        <!-- Three columns for task statuses -->
+                        <div class="row mt-4">
+                            <!-- To Do Column -->
+                            <div class="col-md-4">
+                                <div class="card shadow-sm" style="border-radius: 10px;">
+                                    <div class="card-header bg-primary text-white text-center" style="border-radius: 10px 10px 0 0;">
+                                        <strong>К выполнению</strong>
+                                    </div>
+                                    <div class="card-body" style="max-height: 500px; overflow-y: auto;">
+                                        {% for task in selected_project.tasks if task.status.name == 'К выполнению' %}
+                                        <div class="card mb-3 shadow-sm">
+                                            <div class="card-body">
+                                                <h6 class="card-title">
+                                                    <i class="fas fa-tasks text-info"></i> {{ task.title }}
+                                                </h6>
+                                                <button class="btn btn-sm btn-outline-info" data-toggle="collapse" data-target="#task-{{ task.id }}" aria-expanded="false" aria-controls="task-{{ task.id }}">Подробнее</button>
+                                                <div class="collapse mt-2" id="task-{{ task.id }}">
+                                                    <p><i class="fas fa-align-left text-primary"></i> {{ task.description }}</p>
+                                                    <p><i class="fas fa-calendar-alt text-warning"></i> <strong>Дедлайн:</strong> {{ task.deadline.strftime('%d.%m.%Y') if task.deadline else 'Не установлен' }}</p>
+                                                    <p><i class="fas fa-user-friends text-success"></i> <strong>Ответственные:</strong>
+                                                        {% if task.assigned_users %}
+                                                        {% for assigned_user in task.assigned_users %}
+                                                        <a href="#" data-toggle="modal" data-target="#userInfoModal-{{ assigned_user.user.id }}" class="d-flex align-items-center text-decoration-none mt-2">
+                                                            <img src="{{ url_for('static', filename=assigned_user.user.profile_picture or 'users/default_profile_picture.jpg') }}"
+                                                                 alt="Фото профиля"
+                                                                 class="rounded-circle mr-2"
+                                                                 style="width: 30px; height: 30px; object-fit: cover;">
+                                                            <span>{{ assigned_user.user.full_name }}</span>
+                                                        </a>
+
+                                                        <!-- Модальное окно -->
+                                                        <div class="modal fade" id="userInfoModal-{{ assigned_user.user.id }}" tabindex="-1" role="dialog" aria-labelledby="userInfoModalLabel-{{ assigned_user.user.id }}" aria-hidden="true">
+                                                            <div class="modal-dialog" role="document">
+                                                                <div class="modal-content">
+                                                                    <div class="modal-header">
+                                                                        <h5 class="modal-title" id="userInfoModalLabel-{{ assigned_user.user.id }}">{{ assigned_user.user.full_name }}</h5>
+                                                                        <button type="button" class="close" data-dismiss="modal" aria-label="Закрыть">
+                                                                            <span aria-hidden="true">&times;</span>
+                                                                        </button>
+                                                                    </div>
+                                                                    <div class="modal-body text-center">
+                                                                        <img src="{{ url_for('static', filename=assigned_user.user.profile_picture or 'users/default_profile_picture.jpg') }}"
+                                                                             alt="Фото профиля"
+                                                                             class="rounded-circle mb-3"
+                                                                             style="width: 100px; height: 100px; object-fit: cover;">
+                                                                        <h5>{{ assigned_user.user.full_name }}</h5>
+                                                                        <p><strong>Внутренний номер:</strong> {{ assigned_user.user.internal_id }}</p>
+                                                                        <p><strong>Email:</strong> {{ assigned_user.user.email }}</p>
+                                                                        <p><strong>Телефон:</strong> {{ assigned_user.user.phone_number }}</p>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                        {% endfor %}
+                                                        {% else %}
+                                                        <span class="text-muted">Не назначены</span>
+                                                        {% endif %}
+                                                    </p>
+
+                                                    <!-- Chat-style Comments -->
+                                                    <h6 class="mt-3"><i class="fas fa-comments text-info"></i> Комментарии:</h6>
+                                                    <div class="chat-container p-3" style="background-color: #f8f9fa; border-radius: 10px; max-height: 300px; overflow-y: auto;">
+                                                        {% for comment in task.comments|reverse %}
+                                                        <div class="d-flex align-items-start mb-3">
+                                                            <img src="{{ url_for('static', filename=comment.user.profile_picture or 'users/default_profile_picture.jpg') }}"
+                                                                 alt="Фото профиля"
+                                                                 class="rounded-circle mr-3"
+                                                                 style="width: 40px; height: 40px; object-fit: cover;">
+                                                            <div class="p-2 rounded" style="background-color: #e3f2fd; border: 1px solid #ddd; border-radius: 10px; max-width: 80%;">
+                                                                <strong class="text-primary">{{ comment.user.full_name }}</strong>
+                                                                <p class="mb-1">{{ comment.content }}</p>
+                                                                <small class="text-muted">{{ comment.created_at.strftime('%d.%m.%Y %H:%M') }}</small>
+                                                            </div>
+                                                        </div>
+                                                        {% endfor %}
+                                                        {% if not task.comments %}
+                                                        <p class="text-muted text-center">Комментариев пока нет.</p>
+                                                        {% endif %}
+                                                    </div>
+
+                                                    <!-- Add Comment Form -->
+                                                    <form action="{{ url_for('main_routes.add_comment') }}" method="POST" class="mt-3">
+                                                        <input type="hidden" name="task_id" value="{{ task.id }}">
+                                                        <div class="form-group">
+                                                            <label for="commentContent-{{ task.id }}">Добавить комментарий:</label>
+                                                            <textarea class="form-control" id="commentContent-{{ task.id }}" name="content" rows="2" required></textarea>
+                                                        </div>
+                                                        <button type="submit" class="btn btn-sm btn-primary">Отправить</button>
+                                                    </form>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        {% else %}
+                                        <p class="text-center text-muted">Нет задач</p>
+                                        {% endfor %}
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- In Progress Column -->
+                            <div class="col-md-4">
+                                <div class="card shadow-sm" style="border-radius: 10px;">
+                                    <div class="card-header bg-warning text-dark text-center" style="border-radius: 10px 10px 0 0;">
+                                        <strong>В процессе</strong>
+                                    </div>
+                                    <div class="card-body" style="max-height: 500px; overflow-y: auto;">
+                                        {% for task in selected_project.tasks if task.status.name == 'В процессе' %}
+                                        <div class="card mb-3 shadow-sm">
+                                            <div class="card-body">
+                                                <h6 class="card-title">
+                                                    <i class="fas fa-tasks text-info"></i> {{ task.title }}
+                                                </h6>
+                                                <button class="btn btn-sm btn-outline-warning" data-toggle="collapse" data-target="#task-{{ task.id }}" aria-expanded="false" aria-controls="task-{{ task.id }}">Подробнее</button>
+                                                <div id="task-{{ task.id }}" class="collapse mt-2">
+                                                    <p><i class="fas fa-align-left text-primary"></i> {{ task.description }}</p>
+                                                    <p><i class="fas fa-calendar-alt text-warning"></i> <strong>Дедлайн:</strong> {{ task.deadline.strftime('%d.%m.%Y') if task.deadline else 'Не установлен' }}</p>
+                                                    <p><i class="fas fa-user-friends text-success"></i> <strong>Ответственные:</strong>
+                                                        {% if task.assigned_users %}
+                                                        {% for assigned_user in task.assigned_users %}
+                                                        <a href="#" data-toggle="modal" data-target="#userInfoModal-{{ assigned_user.user.id }}" class="d-flex align-items-center text-decoration-none mt-2">
+                                                            <img src="{{ url_for('static', filename=assigned_user.user.profile_picture or 'users/default_profile_picture.jpg') }}"
+                                                                 alt="Фото профиля"
+                                                                 class="rounded-circle mr-2"
+                                                                 style="width: 30px; height: 30px; object-fit: cover;">
+                                                            <span>{{ assigned_user.user.full_name }}</span>
+                                                        </a>
+
+                                                        <!-- Модальное окно -->
+                                                        <div class="modal fade" id="userInfoModal-{{ assigned_user.user.id }}" tabindex="-1" role="dialog" aria-labelledby="userInfoModalLabel-{{ assigned_user.user.id }}" aria-hidden="true">
+                                                            <div class="modal-dialog" role="document">
+                                                                <div class="modal-content">
+                                                                    <div class="modal-header">
+                                                                        <h5 class="modal-title" id="userInfoModalLabel-{{ assigned_user.user.id }}">{{ assigned_user.user.full_name }}</h5>
+                                                                        <button type="button" class="close" data-dismiss="modal" aria-label="Закрыть">
+                                                                            <span aria-hidden="true">&times;</span>
+                                                                        </button>
+                                                                    </div>
+                                                                    <div class="modal-body text-center">
+                                                                        <img src="{{ url_for('static', filename=assigned_user.user.profile_picture or 'users/default_profile_picture.jpg') }}"
+                                                                             alt="Фото профиля"
+                                                                             class="rounded-circle mb-3"
+                                                                             style="width: 100px; height: 100px; object-fit: cover;">
+                                                                        <h5>{{ assigned_user.user.full_name }}</h5>
+                                                                        <p><strong>Внутренний номер:</strong> {{ assigned_user.user.internal_id }}</p>
+                                                                        <p><strong>Email:</strong> {{ assigned_user.user.email }}</p>
+                                                                        <p><strong>Телефон:</strong> {{ assigned_user.user.phone_number }}</p>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                        {% endfor %}
+                                                        {% else %}
+                                                        <span class="text-muted">Не назначены</span>
+                                                        {% endif %}
+                                                    </p>
+                                                    <!-- Chat-style Comments -->
+                                                    <h6 class="mt-3"><i class="fas fa-comments text-info"></i> Комментарии:</h6>
+                                                    <div class="chat-container p-3" style="background-color: #f8f9fa; border-radius: 10px; max-height: 300px; overflow-y: auto;">
+                                                        {% for comment in task.comments|reverse %}
+                                                        <div class="d-flex align-items-start mb-3">
+                                                            <img src="{{ url_for('static', filename=comment.user.profile_picture or 'users/default_profile_picture.jpg') }}"
+                                                                 alt="Фото профиля"
+                                                                 class="rounded-circle mr-3"
+                                                                 style="width: 40px; height: 40px; object-fit: cover;">
+                                                            <div class="p-2 rounded" style="background-color: #e3f2fd; border: 1px solid #ddd; border-radius: 10px; max-width: 80%;">
+                                                                <strong class="text-primary">{{ comment.user.full_name }}</strong>
+                                                                <p class="mb-1">{{ comment.content }}</p>
+                                                                <small class="text-muted">{{ comment.created_at.strftime('%d.%m.%Y %H:%M') }}</small>
+                                                            </div>
+                                                        </div>
+                                                        {% endfor %}
+                                                        {% if not task.comments %}
+                                                        <p class="text-muted text-center">Комментариев пока нет.</p>
+                                                        {% endif %}
+                                                    </div>
+
+                                                    <!-- Add Comment Form -->
+                                                    <form action="{{ url_for('main_routes.add_comment') }}" method="POST" class="mt-3">
+                                                        <input type="hidden" name="task_id" value="{{ task.id }}">
+                                                        <div class="form-group">
+                                                            <label for="commentContent-{{ task.id }}">Добавить комментарий:</label>
+                                                            <textarea class="form-control" id="commentContent-{{ task.id }}" name="content" rows="2" required></textarea>
+                                                        </div>
+                                                        <button type="submit" class="btn btn-sm btn-primary">Отправить</button>
+                                                    </form>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        {% else %}
+                                        <p class="text-center text-muted">Нет задач</p>
+                                        {% endfor %}
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Done Column -->
+                            <div class="col-md-4">
+                                <div class="card shadow-sm" style="border-radius: 10px;">
+                                    <div class="card-header bg-success text-white text-center" style="border-radius: 10px 10px 0 0;">
+                                        <strong>Выполнено</strong>
+                                    </div>
+                                    <div class="card-body" style="max-height: 500px; overflow-y: auto;">
+                                        {% for task in selected_project.tasks if task.status.name == 'Выполнено' %}
+                                        <div class="card mb-3 shadow-sm">
+                                            <div class="card-body">
+                                                <h6 class="card-title">
+                                                    <i class="fas fa-tasks text-info"></i> {{ task.title }}
+                                                </h6>
+                                                <button class="btn btn-sm btn-outline-success" data-toggle="collapse" data-target="#task-{{ task.id }}" aria-expanded="false" aria-controls="task-{{ task.id }}">Подробнее</button>
+                                                <div id="task-{{ task.id }}" class="collapse mt-2">
+                                                    <p><i class="fas fa-align-left text-primary"></i> {{ task.description }}</p>
+                                                    <p><i class="fas fa-calendar-alt text-warning"></i> <strong>Дедлайн:</strong> {{ task.deadline.strftime('%d.%m.%Y') if task.deadline else 'Не установлен' }}</p>
+                                                    <p><i class="fas fa-user-friends text-success"></i> <strong>Ответственные:</strong>
+                                                        {% if task.assigned_users %}
+                                                        {% for assigned_user in task.assigned_users %}
+                                                        <a href="#" data-toggle="modal" data-target="#userInfoModal-{{ assigned_user.user.id }}" class="d-flex align-items-center text-decoration-none mt-2">
+                                                            <img src="{{ url_for('static', filename=assigned_user.user.profile_picture or 'users/default_profile_picture.jpg') }}"
+                                                                 alt="Фото профиля"
+                                                                 class="rounded-circle mr-2"
+                                                                 style="width: 30px; height: 30px; object-fit: cover;">
+                                                            <span>{{ assigned_user.user.full_name }}</span>
+                                                        </a>
+
+                                                        <!-- Модальное окно -->
+                                                        <div class="modal fade" id="userInfoModal-{{ assigned_user.user.id }}" tabindex="-1" role="dialog" aria-labelledby="userInfoModalLabel-{{ assigned_user.user.id }}" aria-hidden="true">
+                                                            <div class="modal-dialog" role="document">
+                                                                <div class="modal-content">
+                                                                    <div class="modal-header">
+                                                                        <h5 class="modal-title" id="userInfoModalLabel-{{ assigned_user.user.id }}">{{ assigned_user.user.full_name }}</h5>
+                                                                        <button type="button" class="close" data-dismiss="modal" aria-label="Закрыть">
+                                                                            <span aria-hidden="true">&times;</span>
+                                                                        </button>
+                                                                    </div>
+                                                                    <div class="modal-body text-center">
+                                                                        <img src="{{ url_for('static', filename=assigned_user.user.profile_picture or 'users/default_profile_picture.jpg') }}"
+                                                                             alt="Фото профиля"
+                                                                             class="rounded-circle mb-3"
+                                                                             style="width: 100px; height: 100px; object-fit: cover;">
+                                                                        <h5>{{ assigned_user.user.full_name }}</h5>
+                                                                        <p><strong>Внутренний номер:</strong> {{ assigned_user.user.internal_id }}</p>
+                                                                        <p><strong>Email:</strong> {{ assigned_user.user.email }}</p>
+                                                                        <p><strong>Телефон:</strong> {{ assigned_user.user.phone_number }}</p>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                        {% endfor %}
+                                                        {% else %}
+                                                        <span class="text-muted">Не назначены</span>
+                                                        {% endif %}
+                                                    </p>
+                                                    <!-- Chat-style Comments -->
+                                                    <h6 class="mt-3"><i class="fas fa-comments text-info"></i> Комментарии:</h6>
+                                                    <div class="chat-container p-3" style="background-color: #f8f9fa; border-radius: 10px; max-height: 300px; overflow-y: auto;">
+                                                        {% for comment in task.comments|reverse %}
+                                                        <div class="d-flex align-items-start mb-3">
+                                                            <img src="{{ url_for('static', filename=comment.user.profile_picture or 'users/default_profile_picture.jpg') }}"
+                                                                 alt="Фото профиля"
+                                                                 class="rounded-circle mr-3"
+                                                                 style="width: 40px; height: 40px; object-fit: cover;">
+                                                            <div class="p-2 rounded" style="background-color: #e3f2fd; border: 1px solid #ddd; border-radius: 10px; max-width: 80%;">
+                                                                <strong class="text-primary">{{ comment.user.full_name }}</strong>
+                                                                <p class="mb-1">{{ comment.content }}</p>
+                                                                <small class="text-muted">{{ comment.created_at.strftime('%d.%m.%Y %H:%M') }}</small>
+                                                            </div>
+                                                        </div>
+                                                        {% endfor %}
+                                                        {% if not task.comments %}
+                                                        <p class="text-muted text-center">Комментариев пока нет.</p>
+                                                        {% endif %}
+                                                    </div>
+
+                                                    <!-- Add Comment Form -->
+                                                    <form action="{{ url_for('main_routes.add_comment') }}" method="POST" class="mt-3">
+                                                        <input type="hidden" name="task_id" value="{{ task.id }}">
+                                                        <div class="form-group">
+                                                            <label for="commentContent-{{ task.id }}">Добавить комментарий:</label>
+                                                            <textarea class="form-control" id="commentContent-{{ task.id }}" name="content" rows="2" required></textarea>
+                                                        </div>
+                                                        <button type="submit" class="btn btn-sm btn-primary">Отправить</button>
+                                                    </form>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        {% else %}
+                                        <p class="text-center text-muted">Нет задач</p>
+                                        {% endfor %}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% else %}
+            <div class="text-center mt-4">
+                <h1 class="mb-4">Добро пожаловать в управление проектами</h1>
+                <p class="text-muted">Выберите проект в левой панели, чтобы увидеть подробную информацию.</p>
+            </div>
             {% endif %}
         </div>
-        <ul class="project-list">
-            {% for project in projects %}
-                <li>
-                    <a href="#" class="project-link" onclick="selectProject('{{ project.id }}', '{{ project.name }}')">
-                        <span class="project-icon"><i class="fas fa-folder"></i></span>
-                        {{ project.name }}
-                    </a>
-                </li>
-            {% endfor %}
-        </ul>
-    </aside>
+    </div>
+</div>
 
-    <!-- Create Project Modal -->
-    <div class="modal fade" id="createProjectModal" tabindex="-1" role="dialog" aria-labelledby="createProjectModalLabel" aria-hidden="true">
-        <div class="modal-dialog" role="document">
-            <form method="POST" action="{{ url_for('main_routes.create_project') }}">
-                <div class="modal-content">
-                    <div class="modal-header">
-                        <h5 class="modal-title" id="createProjectModalLabel">Создать проект</h5>
-                        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                            <span aria-hidden="true">&times;</span>
-                        </button>
+<!-- Модальное окно информации о менеджере -->
+<div class="modal fade" id="managerInfoModal" tabindex="-1" role="dialog" aria-labelledby="managerInfoModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="managerInfoModalLabel">Информация о менеджере</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                {% if selected_project.manager %}
+                <div class="text-center">
+                    <img src="{{ url_for('static', filename=selected_project.manager.profile_picture or 'users/default_profile_picture.jpg') }}"
+                         alt="Фото менеджера"
+                         class="rounded-circle mb-3"
+                         style="width: 80px; height: 80px; object-fit: cover;">
+                    <h5>{{ selected_project.manager.full_name }}</h5>
+                    <p><strong>Email:</strong> {{ selected_project.manager.email }}</p>
+                    <p><strong>Телефон:</strong> {{ selected_project.manager.phone_number }}</p>
+                </div>
+                {% else %}
+                <p class="text-muted">Информация о менеджере недоступна.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Модальное окно создания задачи -->
+<div class="modal fade" id="createTaskModal" tabindex="-1" role="dialog" aria-labelledby="createTaskModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="createTaskModalLabel">Создать новую задачу</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <form action="{{ url_for('main_routes.create_task') }}" method="POST">
+                <div class="modal-body">
+                    <input type="hidden" name="project_id" value="{{ selected_project.id }}">
+                    <div class="form-group">
+                        <label for="taskTitle">Название задачи</label>
+                        <input type="text" class="form-control" id="taskTitle" name="title" required>
                     </div>
-                    <div class="modal-body">
-                        <div class="form-group">
-                            <label for="project-name">Название проекта</label>
-                            <input type="text" class="form-control" id="project-name" name="project_name" required>
-                        </div>
-                        <div class="form-group">
-                            <label for="project-description">Описание</label>
-                            <textarea class="form-control" id="project-description" name="description" required></textarea>
-                        </div>
-                        <div class="form-group">
-                            <label for="status-id">Статус проекта</label>
-                            <select class="form-control" id="status-id" name="status_id" required>
-                                {% for status in project_statuses %}
-                                    <option value="{{ status.id }}">{{ status.name }}</option>
-                                {% endfor %}
-                            </select>
-                        </div>
-                        {% if current_user.role.name == 'admin' %}
-                        <div class="form-group">
-                            <label for="manager-id">Ответственный менеджер</label>
-                            <select class="form-control" id="manager-id" name="manager_id" required>
-                                {% for user in managers %}
-                                    <option value="{{ user.id }}">{{ user.full_name }}</option>
-                                {% endfor %}
-                            </select>
-                        </div>
-                        {% endif %}
-                        <div class="form-group">
-                            <label for="project-deadline">Срок выполнения</label>
-                            <input type="date" class="form-control" id="project-deadline" name="deadline" required>
-                        </div>
+                    <div class="form-group">
+                        <label for="taskDescription">Описание</label>
+                        <textarea class="form-control" id="taskDescription" name="description" rows="3" required></textarea>
                     </div>
-                    <div class="modal-footer">
-                        <button type="submit" class="btn btn-primary">Создать</button>
-                        <button type="button" class="btn btn-secondary" data-dismiss="modal">Отмена</button>
+                    <div class="form-group">
+                        <label for="taskStatus">Статус</label>
+                        <select class="form-control" id="taskStatus" name="status_id" required>
+                            <option value="" disabled selected>Выберите статус</option>
+                            {% for status in task_statuses %}
+                            <option value="{{ status.id }}">{{ status.name }}</option>
+                            {% endfor %}
+                        </select>
                     </div>
+                    <div class="form-group">
+                        <label for="taskPriority">Приоритет</label>
+                        <select class="form-control" id="taskPriority" name="priority" required>
+                            <option value="1">Высокий</option>
+                            <option value="2">Средний</option>
+                            <option value="3">Низкий</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="taskDeadline">Дедлайн</label>
+                        <input type="date" class="form-control" id="taskDeadline" name="deadline">
+                    </div>
+                    <div class="form-group">
+                        <label for="assignedUsers">Ответственные</label>
+                        <select class="form-control" id="assignedUsers" name="assigned_user_ids" multiple required>
+                            {% for user in all_users %}
+                            <option value="{{ user.id }}">{{ user.full_name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Отмена</button>
+                    <button type="submit" class="btn btn-primary">Создать</button>
                 </div>
             </form>
         </div>
     </div>
-
-    <!-- Main Content -->
-    <main class="content">
-        <!-- Project Panel -->
-        <div class="project-panel" id="project-panel">
-            <button id="summary-btn" class="btn btn-tab active-tab" onclick="toggleView('summary')">
-                <i class="fas fa-chart-bar"></i> Сводка
-            </button>
-            <button id="tasks-btn" class="btn btn-tab d-none" onclick="toggleView('tasks')">
-                <i class="fas fa-tasks"></i> Задачи
-            </button>
-            <button id="calendar-btn" class="btn btn-tab" onclick="toggleView('calendar')">
-                <i class="fas fa-calendar-alt"></i> Календарь
-            </button>
-        </div>
-        <!-- Сводка -->
-        <div id="summary-view" class="summary-cards">
-
-            <!-- Количество проектов за неделю -->
-            <div class="summary-card">
-                <h3><i class="fas fa-folder-plus"></i> Созданные проекты</h3>
-                <p>{{ new_projects_count }} за последние 7 дней</p>
-            </div>
-
-            <!-- Количество завершенных проектов -->
-            <div class="summary-card">
-                <h3><i class="fas fa-check-circle"></i> Выполненные проекты</h3>
-                <p>{{ completed_projects_count }} завершено</p>
-            </div>
-
-            <!-- Статистика задач -->
-            <div class="summary-card">
-                <h3><i class="fas fa-chart-pie"></i> Статистика задач</h3>
-                <canvas id="tasksChart"></canvas>
-            </div>
-
-            <!-- Активность пользователей -->
-            <div class="summary-card">
-                <h3><i class="fas fa-user-clock"></i> Активность пользователей</h3>
-                <p>{{ task_activity_count }} задач в процессе выполнения</p>
-            </div>
-        </div>
-        <!-- Tasks -->
-        <div id="tasks-view" class="task-view d-none">
-            <div class="status-list">
-                {% for status in task_statuses %}
-                <div class="status-card">
-                    <div class="status-header status-{{ status.color }}">
-                        {{ status.name }}
-                    </div>
-                   <div class="task-list">
-                        {% for task in tasks if task.status.name == status.name %}
-                        <div class="card mb-3" style="border: 1px solid #ccc; border-radius: 8px;">
-                            <div class="card-body">
-                                <h5 class="card-title">{{ task.title }}</h5>
-                                <h6 class="card-subtitle mb-2 text-muted">Статус: {{ task.status.name }}</h6>
-                                <p class="card-text">
-                                    <strong>Описание:</strong> {{ task.description or "Нет описания" }}<br>
-                                    <strong>Приоритет:</strong> {{ task.priority }}<br>
-                                    <strong>Дедлайн:</strong> {{ task.deadline.strftime('%d.%m.%Y') if task.deadline else "Не указан" }}
-                                </p>
-                                <p><strong>Ответственные:</strong></p>
-                                <ul>
-                                    {% for user_relation in task.assigned_users %}
-                                        <li>{{ user_relation.user.full_name }}</li>
-                                    {% endfor %}
-                                </ul>
-                                <button class="btn btn-sm btn-primary" onclick="viewTaskDetails('{{ task.id }}')">Подробнее</button>
-                            </div>
-                        </div>
-                        {% endfor %}
-                    </div>
-                    <button class="btn btn-sm btn-outline-primary mt-2" onclick="showCreateTaskModal('{{ status.id }}')">
-                        + Создать
-                    </button>
-                </div>
-                {% endfor %}
-            </div>
-        </div>
-
-        <!-- Task Details Modal -->
-        <div class="modal fade" id="taskDetailsModal" tabindex="-1" role="dialog" aria-labelledby="taskDetailsModalLabel" aria-hidden="true">
-            <div class="modal-dialog" role="document">
-                <div class="modal-content">
-                    <div class="modal-header">
-                        <h5 class="modal-title" id="taskDetailsModalLabel">Детали задачи</h5>
-                        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                            <span aria-hidden="true">&times;</span>
-                        </button>
-                    </div>
-                    <div class="modal-body" id="taskDetailsBody">
-                        <!-- Task details will be dynamically loaded here -->
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Модальное окно создания задачи -->
-        <div class="modal fade" id="createTaskModal" tabindex="-1" role="dialog" aria-labelledby="createTaskModalLabel" aria-hidden="true">
-            <div class="modal-dialog" role="document">
-                <form method="POST" action="{{ url_for('main_routes.create_task') }}">
-                    <div class="modal-content">
-                        <div class="modal-header">
-                            <h5 class="modal-title" id="createTaskModalLabel">Создать задачу</h5>
-                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                        </div>
-                        <div class="modal-body">
-                            <div class="form-group">
-                                <label for="task-title">Название задачи</label>
-                                <input type="text" class="form-control" id="task-title" name="task_title" required>
-                            </div>
-                            <div class="form-group">
-                                <label for="task-description">Описание</label>
-                                <textarea class="form-control" id="task-description" name="task_description"></textarea>
-                            </div>
-                            <div class="form-group">
-                                <label for="task-priority">Приоритет</label>
-                                <select class="form-control" id="task-priority" name="task_priority">
-                                    <option value="1">Низкий</option>
-                                    <option value="2">Средний</option>
-                                    <option value="3">Высокий</option>
-                                </select>
-                            </div>
-                            <div class="form-group">
-                                <label for="task-status">Статус</label>
-                                <select class="form-control" id="task-status" name="task_status_id" required>
-                                    {% for status in task_statuses %}
-                                        <option value="{{ status.id }}">{{ status.name }}</option>
-                                    {% endfor %}
-                                </select>
-                            </div>
-                            <div class="form-group">
-                                <label for="task-assigned">Ответственные</label>
-                                <select class="form-control" id="task-assigned" name="assigned_users" multiple required>
-                                    {% for user in available_users %}
-                                        <option value="{{ user.id }}">{{ user.full_name }}</option>
-                                    {% endfor %}
-                                </select>
-                            </div>
-                            <div class="form-group">
-                                <label for="task-deadline">Дедлайн</label>
-                                <input type="date" class="form-control" id="task-deadline" name="task_deadline" required>
-                            </div>
-                            <input type="hidden" id="project-id" name="project_id" value="{{ selected_project.id }}">
-                        </div>
-                        <div class="modal-footer">
-                            <button type="submit" class="btn btn-primary">Создать</button>
-                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
-                        </div>
-                    </div>
-                </form>
-            </div>
-        </div>
-
-
-
-        <!-- Calendar -->
-        <div id="calendar-view" class="calendar-view d-none">
-            <div id="calendar"></div>
-        </div>
-    </main>
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
-    let selectedProjectId = null;
-
-    // Функция для открытия модального окна создания задачи
-    function showCreateTaskModal(statusId) {
-        console.log(`Открытие модального окна для создания задачи. Статус ID: ${statusId}, Проект ID: ${selectedProjectId}`);
-
-        if (!selectedProjectId) {
-            alert('Сначала выберите проект!');
-            return;
-        }
-
-        document.getElementById('task-status').value = statusId; // Установить статус задачи
-        document.getElementById('project-id').value = selectedProjectId; // Установить ID проекта
-        new bootstrap.Modal(document.getElementById('createTaskModal')).show(); // Показать модальное окно
-    }
-
-    // Функция выбора проекта
-    function selectProject(projectId, projectName) {
-        selectedProjectId = projectId;
-        document.getElementById('tasks-btn').classList.remove('d-none');
-        console.log(`Проект выбран: ${projectName} (ID: ${projectId})`);
-    }
-
-    // Функция переключения между вкладками (сводка, задачи, календарь)
-    function toggleView(view) {
-        // Скрыть все вьюшки
-        document.getElementById('summary-view')?.classList.add('d-none');
-        document.getElementById('tasks-view')?.classList.add('d-none');
-        document.getElementById('calendar-view')?.classList.add('d-none');
-
-        // Снять активное состояние с кнопок
-        document.getElementById('summary-btn')?.classList.remove('active-tab');
-        document.getElementById('tasks-btn')?.classList.remove('active-tab');
-        document.getElementById('calendar-btn')?.classList.remove('active-tab');
-
-        // Показать выбранный вью и активировать соответствующую кнопку
-        document.getElementById(`${view}-view`)?.classList.remove('d-none');
-        document.getElementById(`${view}-btn`)?.classList.add('active-tab');
-    }
-
-    // Установка графика задач
     document.addEventListener('DOMContentLoaded', function () {
-        const ctx = document.getElementById('tasksChart').getContext('2d');
-        const tasksChart = new Chart(ctx, {
-            type: 'doughnut',
-            data: {
-                labels: ['Выполнено', 'В процессе', 'Назначено'],
-                datasets: [{
-                    label: 'Статус задач',
-                    data: [{{ completed_tasks_count }}, {{ in_progress_tasks_count }}, {{ assigned_tasks_count }}],
-                    backgroundColor: ['#28a745', '#ff9800', '#007bff'],
-                    hoverBackgroundColor: ['#218838', '#e68a00', '#0056b3'],
-                    borderColor: ['#ffffff', '#ffffff', '#ffffff'],
-                    borderWidth: 1,
-                }]
-            },
-            options: {
-                responsive: true,
-                plugins: {
-                    legend: { position: 'top' },
-                    tooltip: {
-                        callbacks: {
-                            label: function (context) {
-                                let label = context.label || '';
-                                if (context.raw !== undefined) {
-                                    label += `: ${context.raw}`;
-                                }
-                                return label;
-                            }
-                        }
+        const canvas = document.getElementById('taskStatsChart');
+
+        if (canvas) {
+            const ctx = canvas.getContext('2d');
+            const taskData = [
+                {{ selected_project.tasks|selectattr('status.name', 'equalto', 'К выполнению')|list|length }},
+                {{ selected_project.tasks|selectattr('status.name', 'equalto', 'В процессе')|list|length }},
+                {{ selected_project.tasks|selectattr('status.name', 'equalto', 'Выполнено')|list|length }}
+            ];
+
+            new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['К выполнению', 'В процессе', 'Выполнено'],
+                    datasets: [{
+                        data: taskData,
+                        backgroundColor: ['#ffc107', '#ff6347', '#28a745'],
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: { position: 'bottom' },
                     }
                 }
-            }
-        });
+            });
+        }
     });
-
-
-
 </script>
+
 {% endblock %}

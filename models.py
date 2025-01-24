@@ -200,6 +200,25 @@ class Comment(db.Model):
     task = db.relationship('Task', back_populates='comments')
 
 
+# Таблица уведомлений
+class Notification(db.Model):
+    __tablename__ = 'notifications'
+
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id', ondelete='CASCADE'), nullable=False)
+    content = db.Column(db.Text, nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    is_read = db.Column(db.Boolean, default=False, nullable=False)  # Флаг подтверждения
+    task_id = db.Column(db.Integer, db.ForeignKey('tasks.id', ondelete='CASCADE'), nullable=True)
+    subtask_id = db.Column(db.Integer, db.ForeignKey('subtasks.id', ondelete='CASCADE'), nullable=True)
+    comment_id = db.Column(db.Integer, db.ForeignKey('comments.id', ondelete='CASCADE'), nullable=True)
+
+    user = db.relationship('User', backref='notifications', lazy=True)
+    task = db.relationship('Task', lazy=True)
+    subtask = db.relationship('Subtask', lazy=True)
+    comment = db.relationship('Comment', lazy=True)
+
+
 # Функция для создания базы данных
 def init_db(app):
     db.init_app(app)

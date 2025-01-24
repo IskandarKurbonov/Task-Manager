@@ -1,0 +1,150 @@
+/* Общие стили */
+body {
+    font-family: 'Arial', sans-serif;
+    margin: 0;
+    padding: 0;
+    background-color: #f8f9fa;
+    color: #212529;
+    transition: background-color 0.3s, color 0.3s;
+}
+
+.dark-mode {
+    background-color: #212529;
+    color: #f8f9fa;
+}
+
+.container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0px;
+}
+
+/* Навигационная панель */
+.navbar {
+    background-color: #ffffff;
+    border-bottom: 1px solid #e7e7e7;
+    padding: 3px 10px; /* Ещё меньше высота и отступ */
+}
+
+.navbar-brand {
+    font-size: 1rem; /* Ещё меньше шрифт */
+    font-weight: bold;
+    color: #007bff;
+    display: flex;
+    align-items: center;
+}
+
+.navbar-brand:hover {
+    color: #0056b3;
+    text-decoration: none;
+}
+
+.navbar .logo {
+    width: 25px; /* Ещё меньше размер логотипа */
+    height: 25px;
+    margin-right: 5px;
+}
+
+.navbar-nav .nav-item {
+    margin-left: 5px; /* Ещё меньше отступ */
+}
+
+.navbar-nav .nav-link {
+    color: #495057;
+    font-size: 0.8rem; /* Ещё меньше шрифт */
+    font-weight: 500;
+}
+
+.navbar-nav .nav-link:hover {
+    color: #007bff;
+}
+
+/* Кнопка профиля */
+.nav-item.dropdown .nav-link {
+    display: flex;
+    align-items: center;
+    padding: 0;
+}
+
+.nav-item.dropdown .rounded-circle {
+    width: 25px; /* Ещё меньше размер аватара */
+    height: 25px;
+    border: 1px solid #dee2e6;
+}
+
+.dropdown-menu {
+    border-radius: 8px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.dropdown-item {
+    font-size: 0.8rem;
+    color: #212529;
+}
+
+.dropdown-item:hover {
+    background-color: #f1f1f1;
+    color: #007bff;
+}
+
+.dropdown-item.text-danger {
+    color: #dc3545;
+}
+
+.dropdown-item.text-danger:hover {
+    background-color: #f8d7da;
+}
+
+/* Контейнер содержимого */
+.content-container {
+    margin-top: 50px; /* Ещё меньше отступ сверху */
+    padding-top: 15px;
+    padding-bottom: 15px;
+}
+
+/* Темная тема */
+.dark-mode .navbar {
+    background-color: #343a40;
+    border-color: #454d55;
+}
+
+.dark-mode .navbar-brand {
+    color: #f8f9fa;
+}
+
+.dark-mode .navbar-brand:hover {
+    color: #e0e0e0;
+}
+
+.dark-mode .navbar-nav .nav-link {
+    color: #f8f9fa;
+}
+
+.dark-mode .dropdown-menu {
+    background-color: #343a40;
+    color: #f8f9fa;
+    border-color: #454d55;
+}
+
+.dark-mode .dropdown-item {
+    color: #f8f9fa;
+}
+
+.dark-mode .dropdown-item:hover {
+    background-color: #495057;
+}
+
+/* Адаптивные стили */
+@media (max-width: 768px) {
+    .navbar-nav {
+        text-align: center;
+    }
+
+    .navbar-toggler {
+        margin-left: auto;
+    }
+
+    .dropdown-menu {
+        width: 100%;
+    }
+}
