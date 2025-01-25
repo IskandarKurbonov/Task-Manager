@@ -94,13 +94,23 @@ def main():
         # Получение всех пользователей (для назначения задач)
         all_users = User.query.all()
 
+        # Получение пользователей, связанных с проектом
+        project_users = []
+        if selected_project:
+            project_users = (
+                User.query.join(ProjectUser)
+                .filter(ProjectUser.project_id == selected_project.id)
+                .all()
+            )
+
         # Передаем данные в шаблон
         return render_template(
             'main.html',
-            projects=projects,  # Список проектов
-            selected_project=selected_project,  # Текущий выбранный проект
-            task_statuses=task_statuses,  # Список статусов задач
-            all_users=all_users  # Все пользователи (для назначения задач)
+            projects=projects,
+            selected_project=selected_project,
+            task_statuses=task_statuses,
+            all_users=all_users,
+            project_users=project_users  # Добавляем пользователей проекта
         )
 
     except Exception as e:

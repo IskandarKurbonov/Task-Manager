@@ -69,8 +69,7 @@
                         </div>
                     </div>
                     <!-- Задачи проекта -->
-                    <div class="tab-pane fade" id="tasks" role="tabpanel" aria-labelledby="tasks-tab" style="background-color: #d4edda; padding: 20px; border-radius: 10px;">
-                        <h2 class="text-center">Задачи</h2>
+                    <div class="tab-pane fade" id="tasks" role="tabpanel" aria-labelledby="tasks-tab" >
 
                         <!-- Three columns for task statuses -->
                         <div class="row mt-4">
@@ -106,7 +105,7 @@
                                                                 <p><i class="fas fa-user-friends text-success"></i> <strong>Ответственные:</strong>
                                                                     {% if task.assigned_users %}
                                                                     {% for assigned_user in task.assigned_users %}
-                                                                    <a href="#" data-toggle="modal" data-target="#userInfoModal-{{ assigned_user.user.id }}" class="d-flex align-items-center text-decoration-none mt-2">
+                                                                    <a href="#" data-toggle="modal" data-target="#userInfoModal-{{ task.id }}-{{ assigned_user.user.id }}" class="d-flex align-items-center text-decoration-none mt-2">
                                                                         <img src="{{ url_for('static', filename=assigned_user.user.profile_picture or 'users/default_profile_picture.jpg') }}"
                                                                              alt="Фото профиля"
                                                                              class="rounded-circle mr-2"
@@ -115,11 +114,11 @@
                                                                     </a>
 
                                                                     <!-- Модальное окно -->
-                                                                    <div class="modal fade" id="userInfoModal-{{ assigned_user.user.id }}" tabindex="-1" role="dialog" aria-labelledby="userInfoModalLabel-{{ assigned_user.user.id }}" aria-hidden="true">
+                                                                    <div class="modal fade" id="userInfoModal-{{ task.id }}-{{ assigned_user.user.id }}" tabindex="-1" role="dialog" aria-labelledby="userInfoModalLabel-{{ task.id }}-{{ assigned_user.user.id }}" aria-hidden="true">
                                                                         <div class="modal-dialog" role="document">
                                                                             <div class="modal-content">
                                                                                 <div class="modal-header">
-                                                                                    <h5 class="modal-title" id="userInfoModalLabel-{{ assigned_user.user.id }}">{{ assigned_user.user.full_name }}</h5>
+                                                                                    <h5 class="modal-title" id="userInfoModalLabel-{{ task.id }}-{{ assigned_user.user.id }}">{{ assigned_user.user.full_name }}</h5>
                                                                                     <button type="button" class="close" data-dismiss="modal" aria-label="Закрыть">
                                                                                         <span aria-hidden="true">&times;</span>
                                                                                     </button>
@@ -142,34 +141,6 @@
                                                                     <span class="text-muted">Не назначены</span>
                                                                     {% endif %}
                                                                 </p>
-
-                                                                <!-- Комментарии -->
-                                                                <h6 class="mt-4"><i class="fas fa-comments text-info"></i> Комментарии:</h6>
-                                                                <div class="chat-container p-3" style="background-color: #f8f9fa; border-radius: 10px; max-height: 300px; overflow-y: auto;">
-                                                                    {% for comment in task.comments|reverse %}
-                                                                    <div class="d-flex align-items-start mb-3">
-                                                                        <img src="{{ url_for('static', filename=comment.user.profile_picture or 'users/default_profile_picture.jpg') }}" alt="Фото профиля" class="rounded-circle mr-3" style="width: 40px; height: 40px; object-fit: cover;">
-                                                                        <div class="p-2 rounded" style="background-color: #e3f2fd; border: 1px solid #ddd; border-radius: 10px; max-width: 80%;">
-                                                                            <strong class="text-primary">{{ comment.user.full_name }}</strong>
-                                                                            <p class="mb-1">{{ comment.content }}</p>
-                                                                            <small class="text-muted">{{ comment.created_at.strftime('%d.%m.%Y %H:%M') }}</small>
-                                                                        </div>
-                                                                    </div>
-                                                                    {% endfor %}
-                                                                    {% if not task.comments %}
-                                                                    <p class="text-muted text-center">Комментариев пока нет.</p>
-                                                                    {% endif %}
-                                                                </div>
-
-                                                                <!-- Форма добавления комментария -->
-                                                                <form id="commentForm-{{ task.id }}" class="mt-3">
-                                                                    <input type="hidden" name="task_id" value="{{ task.id }}">
-                                                                    <div class="form-group">
-                                                                        <label for="commentContent-{{ task.id }}">Добавить комментарий:</label>
-                                                                        <textarea class="form-control" id="commentContent-{{ task.id }}" name="content" rows="2" required></textarea>
-                                                                    </div>
-                                                                    <button type="button" class="btn btn-primary submit-comment" data-task-id="{{ task.id }}">Отправить</button>
-                                                                </form>
                                                             </div>
                                                         </div>
                                                     </div>
@@ -179,6 +150,58 @@
                                         {% else %}
                                         <p class="text-center text-muted">Нет задач</p>
                                         {% endfor %}
+                                    </div>
+                                    <div class="card-footer text-center">
+                                        <button class="btn btn-sm btn-primary" data-toggle="modal" data-target="#createTaskModal">
+                                            <i class="fas fa-plus"></i> Создать задачу
+                                        </button>
+                                    </div>
+                                    <!-- Модальное окно создания задачи -->
+                                    <div class="modal fade" id="createTaskModal" tabindex="-1" role="dialog" aria-labelledby="createTaskModalLabel" aria-hidden="true">
+                                        <div class="modal-dialog" role="document">
+                                            <div class="modal-content">
+                                                <div class="modal-header">
+                                                    <h5 class="modal-title" id="createTaskModalLabel">Создать новую задачу</h5>
+                                                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                                        <span aria-hidden="true">&times;</span>
+                                                    </button>
+                                                </div>
+                                                <form action="/create_task" method="POST">
+                                                    <div class="modal-body">
+                                                        <input type="hidden" name="project_id" value="{{ selected_project.id }}">
+                                                        <input type="hidden" name="status_id" value="5"> <!-- ID статуса "К выполнению" -->
+                                                        <div class="form-group">
+                                                            <label for="taskTitle">Название задачи</label>
+                                                            <input type="text" class="form-control" id="taskTitle" name="title" required>
+                                                        </div>
+                                                        <div class="form-group">
+                                                            <label for="taskDescription">Описание</label>
+                                                            <textarea class="form-control" id="taskDescription" name="description" rows="3" required></textarea>
+                                                        </div>
+                                                        <div class="form-group">
+                                                            <label for="taskPriority">Приоритет</label>
+                                                            <input type="number" class="form-control" id="taskPriority" name="priority" min="1" max="5" value="1">
+                                                        </div>
+                                                        <div class="form-group">
+                                                            <label for="taskDeadline">Дедлайн</label>
+                                                            <input type="date" class="form-control" id="taskDeadline" name="deadline">
+                                                        </div>
+                                                        <div class="form-group">
+                                                            <label for="assignedUsers">Ответственные</label>
+                                                            <select class="form-control select2" id="assignedUsers" name="assigned_user_ids[]" multiple="multiple" style="width: 100%;">
+                                                                {% for user in project_users %}
+                                                                <option value="{{ user.id }}">{{ user.full_name }}</option>
+                                                                {% endfor %}
+                                                            </select>
+                                                        </div>
+                                                    </div>
+                                                    <div class="modal-footer">
+                                                        <button type="button" class="btn btn-secondary" data-dismiss="modal">Отмена</button>
+                                                        <button type="submit" class="btn btn-primary">Создать</button>
+                                                    </div>
+                                                </form>
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -214,44 +237,43 @@
                                                                 <p><i class="fas fa-calendar-alt text-warning"></i> <strong>Дедлайн:</strong> {{ task.deadline.strftime('%d.%m.%Y') if task.deadline else 'Не установлен' }}</p>
                                                                 <p><i class="fas fa-user-friends text-success"></i> <strong>Ответственные:</strong>
                                                                     {% if task.assigned_users %}
-                                                                    {% for assigned_user in task.assigned_users %}
-                                                                    <a href="#" data-toggle="modal" data-target="#userInfoModal-{{ assigned_user.user.id }}" class="d-flex align-items-center text-decoration-none mt-2">
-                                                                        <img src="{{ url_for('static', filename=assigned_user.user.profile_picture or 'users/default_profile_picture.jpg') }}"
-                                                                             alt="Фото профиля"
-                                                                             class="rounded-circle mr-2"
-                                                                             style="width: 30px; height: 30px; object-fit: cover;">
-                                                                        <span>{{ assigned_user.user.full_name }}</span>
-                                                                    </a>
+                                                                        {% for assigned_user in task.assigned_users %}
+                                                                        <a href="#" data-toggle="modal" data-target="#userInfoModal-{{ task.id }}-{{ assigned_user.user.id }}" class="d-flex align-items-center text-decoration-none mt-2">
+                                                                            <img src="{{ url_for('static', filename=assigned_user.user.profile_picture or 'users/default_profile_picture.jpg') }}"
+                                                                                 alt="Фото профиля"
+                                                                                 class="rounded-circle mr-2"
+                                                                                 style="width: 30px; height: 30px; object-fit: cover;">
+                                                                            <span>{{ assigned_user.user.full_name }}</span>
+                                                                        </a>
 
-                                                                    <!-- Модальное окно -->
-                                                                    <div class="modal fade" id="userInfoModal-{{ assigned_user.user.id }}" tabindex="-1" role="dialog" aria-labelledby="userInfoModalLabel-{{ assigned_user.user.id }}" aria-hidden="true">
-                                                                        <div class="modal-dialog" role="document">
-                                                                            <div class="modal-content">
-                                                                                <div class="modal-header">
-                                                                                    <h5 class="modal-title" id="userInfoModalLabel-{{ assigned_user.user.id }}">{{ assigned_user.user.full_name }}</h5>
-                                                                                    <button type="button" class="close" data-dismiss="modal" aria-label="Закрыть">
-                                                                                        <span aria-hidden="true">&times;</span>
-                                                                                    </button>
-                                                                                </div>
-                                                                                <div class="modal-body text-center">
-                                                                                    <img src="{{ url_for('static', filename=assigned_user.user.profile_picture or 'users/default_profile_picture.jpg') }}"
-                                                                                         alt="Фото профиля"
-                                                                                         class="rounded-circle mb-3"
-                                                                                         style="width: 100px; height: 100px; object-fit: cover;">
-                                                                                    <h5>{{ assigned_user.user.full_name }}</h5>
-                                                                                    <p><strong>Внутренний номер:</strong> {{ assigned_user.user.internal_id }}</p>
-                                                                                    <p><strong>Email:</strong> {{ assigned_user.user.email }}</p>
-                                                                                    <p><strong>Телефон:</strong> {{ assigned_user.user.phone_number }}</p>
+                                                                        <!-- Модальное окно -->
+                                                                        <div class="modal fade" id="userInfoModal-{{ task.id }}-{{ assigned_user.user.id }}" tabindex="-1" role="dialog" aria-labelledby="userInfoModalLabel-{{ task.id }}-{{ assigned_user.user.id }}" aria-hidden="true">
+                                                                            <div class="modal-dialog" role="document">
+                                                                                <div class="modal-content">
+                                                                                    <div class="modal-header">
+                                                                                        <h5 class="modal-title" id="userInfoModalLabel-{{ task.id }}-{{ assigned_user.user.id }}">{{ assigned_user.user.full_name }}</h5>
+                                                                                        <button type="button" class="close" data-dismiss="modal" aria-label="Закрыть">
+                                                                                            <span aria-hidden="true">&times;</span>
+                                                                                        </button>
+                                                                                    </div>
+                                                                                    <div class="modal-body text-center">
+                                                                                        <img src="{{ url_for('static', filename=assigned_user.user.profile_picture or 'users/default_profile_picture.jpg') }}"
+                                                                                             alt="Фото профиля"
+                                                                                             class="rounded-circle mb-3"
+                                                                                             style="width: 100px; height: 100px; object-fit: cover;">
+                                                                                        <h5>{{ assigned_user.user.full_name }}</h5>
+                                                                                        <p><strong>Внутренний номер:</strong> {{ assigned_user.user.internal_id }}</p>
+                                                                                        <p><strong>Email:</strong> {{ assigned_user.user.email }}</p>
+                                                                                        <p><strong>Телефон:</strong> {{ assigned_user.user.phone_number }}</p>
+                                                                                    </div>
                                                                                 </div>
                                                                             </div>
                                                                         </div>
-                                                                    </div>
-                                                                    {% endfor %}
+                                                                        {% endfor %}
                                                                     {% else %}
-                                                                    <span class="text-muted">Не назначены</span>
+                                                                        <span class="text-muted">Не назначены</span>
                                                                     {% endif %}
                                                                 </p>
-
                                                                 <!-- Комментарии -->
                                                                 <h6 class="mt-4"><i class="fas fa-comments text-info"></i> Комментарии:</h6>
                                                                 <div class="chat-container p-3" style="background-color: #f8f9fa; border-radius: 10px; max-height: 300px; overflow-y: auto;">
@@ -323,44 +345,43 @@
                                                                 <p><i class="fas fa-calendar-alt text-warning"></i> <strong>Дедлайн:</strong> {{ task.deadline.strftime('%d.%m.%Y') if task.deadline else 'Не установлен' }}</p>
                                                                 <p><i class="fas fa-user-friends text-success"></i> <strong>Ответственные:</strong>
                                                                     {% if task.assigned_users %}
-                                                                    {% for assigned_user in task.assigned_users %}
-                                                                    <a href="#" data-toggle="modal" data-target="#userInfoModal-{{ assigned_user.user.id }}" class="d-flex align-items-center text-decoration-none mt-2">
-                                                                        <img src="{{ url_for('static', filename=assigned_user.user.profile_picture or 'users/default_profile_picture.jpg') }}"
-                                                                             alt="Фото профиля"
-                                                                             class="rounded-circle mr-2"
-                                                                             style="width: 30px; height: 30px; object-fit: cover;">
-                                                                        <span>{{ assigned_user.user.full_name }}</span>
-                                                                    </a>
+                                                                        {% for assigned_user in task.assigned_users %}
+                                                                        <a href="#" data-toggle="modal" data-target="#userInfoModal-{{ task.id }}-{{ assigned_user.user.id }}" class="d-flex align-items-center text-decoration-none mt-2">
+                                                                            <img src="{{ url_for('static', filename=assigned_user.user.profile_picture or 'users/default_profile_picture.jpg') }}"
+                                                                                 alt="Фото профиля"
+                                                                                 class="rounded-circle mr-2"
+                                                                                 style="width: 30px; height: 30px; object-fit: cover;">
+                                                                            <span>{{ assigned_user.user.full_name }}</span>
+                                                                        </a>
 
-                                                                    <!-- Модальное окно -->
-                                                                    <div class="modal fade" id="userInfoModal-{{ assigned_user.user.id }}" tabindex="-1" role="dialog" aria-labelledby="userInfoModalLabel-{{ assigned_user.user.id }}" aria-hidden="true">
-                                                                        <div class="modal-dialog" role="document">
-                                                                            <div class="modal-content">
-                                                                                <div class="modal-header">
-                                                                                    <h5 class="modal-title" id="userInfoModalLabel-{{ assigned_user.user.id }}">{{ assigned_user.user.full_name }}</h5>
-                                                                                    <button type="button" class="close" data-dismiss="modal" aria-label="Закрыть">
-                                                                                        <span aria-hidden="true">&times;</span>
-                                                                                    </button>
-                                                                                </div>
-                                                                                <div class="modal-body text-center">
-                                                                                    <img src="{{ url_for('static', filename=assigned_user.user.profile_picture or 'users/default_profile_picture.jpg') }}"
-                                                                                         alt="Фото профиля"
-                                                                                         class="rounded-circle mb-3"
-                                                                                         style="width: 100px; height: 100px; object-fit: cover;">
-                                                                                    <h5>{{ assigned_user.user.full_name }}</h5>
-                                                                                    <p><strong>Внутренний номер:</strong> {{ assigned_user.user.internal_id }}</p>
-                                                                                    <p><strong>Email:</strong> {{ assigned_user.user.email }}</p>
-                                                                                    <p><strong>Телефон:</strong> {{ assigned_user.user.phone_number }}</p>
+                                                                        <!-- Модальное окно -->
+                                                                        <div class="modal fade" id="userInfoModal-{{ task.id }}-{{ assigned_user.user.id }}" tabindex="-1" role="dialog" aria-labelledby="userInfoModalLabel-{{ task.id }}-{{ assigned_user.user.id }}" aria-hidden="true">
+                                                                            <div class="modal-dialog" role="document">
+                                                                                <div class="modal-content">
+                                                                                    <div class="modal-header">
+                                                                                        <h5 class="modal-title" id="userInfoModalLabel-{{ task.id }}-{{ assigned_user.user.id }}">{{ assigned_user.user.full_name }}</h5>
+                                                                                        <button type="button" class="close" data-dismiss="modal" aria-label="Закрыть">
+                                                                                            <span aria-hidden="true">&times;</span>
+                                                                                        </button>
+                                                                                    </div>
+                                                                                    <div class="modal-body text-center">
+                                                                                        <img src="{{ url_for('static', filename=assigned_user.user.profile_picture or 'users/default_profile_picture.jpg') }}"
+                                                                                             alt="Фото профиля"
+                                                                                             class="rounded-circle mb-3"
+                                                                                             style="width: 100px; height: 100px; object-fit: cover;">
+                                                                                        <h5>{{ assigned_user.user.full_name }}</h5>
+                                                                                        <p><strong>Внутренний номер:</strong> {{ assigned_user.user.internal_id }}</p>
+                                                                                        <p><strong>Email:</strong> {{ assigned_user.user.email }}</p>
+                                                                                        <p><strong>Телефон:</strong> {{ assigned_user.user.phone_number }}</p>
+                                                                                    </div>
                                                                                 </div>
                                                                             </div>
                                                                         </div>
-                                                                    </div>
-                                                                    {% endfor %}
+                                                                        {% endfor %}
                                                                     {% else %}
-                                                                    <span class="text-muted">Не назначены</span>
+                                                                        <span class="text-muted">Не назначены</span>
                                                                     {% endif %}
                                                                 </p>
-
                                                                 <!-- Комментарии -->
                                                                 <h6 class="mt-4"><i class="fas fa-comments text-info"></i> Комментарии:</h6>
                                                                 <div class="chat-container p-3" style="background-color: #f8f9fa; border-radius: 10px; max-height: 300px; overflow-y: auto;">
@@ -443,66 +464,6 @@
     </div>
 </div>
 
-<!-- Модальное окно создания задачи -->
-<div class="modal fade" id="createTaskModal" tabindex="-1" role="dialog" aria-labelledby="createTaskModalLabel" aria-hidden="true">
-    <div class="modal-dialog" role="document">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="createTaskModalLabel">Создать новую задачу</h5>
-                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                    <span aria-hidden="true">&times;</span>
-                </button>
-            </div>
-            <form action="{{ url_for('main_routes.create_task') }}" method="POST">
-                <div class="modal-body">
-                    <input type="hidden" name="project_id" value="{{ selected_project.id }}">
-                    <div class="form-group">
-                        <label for="taskTitle">Название задачи</label>
-                        <input type="text" class="form-control" id="taskTitle" name="title" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="taskDescription">Описание</label>
-                        <textarea class="form-control" id="taskDescription" name="description" rows="3" required></textarea>
-                    </div>
-                    <div class="form-group">
-                        <label for="taskStatus">Статус</label>
-                        <select class="form-control" id="taskStatus" name="status_id" required>
-                            <option value="" disabled selected>Выберите статус</option>
-                            {% for status in task_statuses %}
-                            <option value="{{ status.id }}">{{ status.name }}</option>
-                            {% endfor %}
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label for="taskPriority">Приоритет</label>
-                        <select class="form-control" id="taskPriority" name="priority" required>
-                            <option value="1">Высокий</option>
-                            <option value="2">Средний</option>
-                            <option value="3">Низкий</option>
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label for="taskDeadline">Дедлайн</label>
-                        <input type="date" class="form-control" id="taskDeadline" name="deadline">
-                    </div>
-                    <div class="form-group">
-                        <label for="assignedUsers">Ответственные</label>
-                        <select class="form-control" id="assignedUsers" name="assigned_user_ids" multiple required>
-                            {% for user in all_users %}
-                            <option value="{{ user.id }}">{{ user.full_name }}</option>
-                            {% endfor %}
-                        </select>
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Отмена</button>
-                    <button type="submit" class="btn btn-primary">Создать</button>
-                </div>
-            </form>
-        </div>
-    </div>
-</div>
-
 <script>
     document.addEventListener('DOMContentLoaded', function () {
         // Инициализация графика задач
@@ -535,7 +496,12 @@
                 }
             });
         }
-
+        $(document).ready(function() {
+            $('.select2').select2({
+                placeholder: "Выберите ответственных",
+                allowClear: true
+            });
+        });
         // Обработчик отправки комментариев через AJAX
         $(document).on('click', '.submit-comment', function () {
             const taskId = $(this).data('task-id');
