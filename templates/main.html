@@ -76,10 +76,10 @@
                             <!-- To Do Column -->
                             <div class="col-md-4">
                                 <div class="card shadow-sm" style="border-radius: 10px;">
-                                    <div class="card-header bg-primary text-white text-center" style="border-radius: 10px 10px 0 0;">
+                                    <div class="card-header bg-warning text-dark text-center" style="border-radius: 10px 10px 0 0;">
                                         <strong>К выполнению</strong>
                                     </div>
-                                    <div class="card-body" style="max-height: 500px; overflow-y: auto;">
+                                    <div class="card-body custom-scroll-container" style="max-height: 500px; overflow-y: auto;">
                                         {% for task in selected_project.tasks if task.status.name == 'К выполнению' %}
                                         <div class="card mb-3 shadow-sm">
                                             <div class="card-body">
@@ -128,8 +128,6 @@
                                                                                          alt="Фото профиля"
                                                                                          class="rounded-circle mb-3"
                                                                                          style="width: 100px; height: 100px; object-fit: cover;">
-                                                                                    <h5>{{ assigned_user.user.full_name }}</h5>
-                                                                                    <p><strong>Внутренний номер:</strong> {{ assigned_user.user.internal_id }}</p>
                                                                                     <p><strong>Email:</strong> {{ assigned_user.user.email }}</p>
                                                                                     <p><strong>Телефон:</strong> {{ assigned_user.user.phone_number }}</p>
                                                                                 </div>
@@ -141,6 +139,33 @@
                                                                     <span class="text-muted">Не назначены</span>
                                                                     {% endif %}
                                                                 </p>
+                                                                <!-- Комментарии -->
+                                                                <h6 class="mt-4"><i class="fas fa-comments text-info"></i> Комментарии:</h6>
+                                                                <div class="chat-container p-3" style="background-color: #f8f9fa; border-radius: 10px; max-height: 300px; overflow-y: auto;">
+                                                                    {% for comment in task.comments|reverse %}
+                                                                    <div class="d-flex align-items-start mb-3">
+                                                                        <img src="{{ url_for('static', filename=comment.user.profile_picture or 'users/default_profile_picture.jpg') }}" alt="Фото профиля" class="rounded-circle mr-3" style="width: 40px; height: 40px; object-fit: cover;">
+                                                                        <div class="p-2 rounded" style="background-color: #e3f2fd; border: 1px solid #ddd; border-radius: 10px; max-width: 80%;">
+                                                                            <strong class="text-primary">{{ comment.user.full_name }}</strong>
+                                                                            <p class="mb-1">{{ comment.content }}</p>
+                                                                            <small class="text-muted">{{ comment.created_at.strftime('%d.%m.%Y %H:%M') }}</small>
+                                                                        </div>
+                                                                    </div>
+                                                                    {% endfor %}
+                                                                    {% if not task.comments %}
+                                                                    <p class="text-muted text-center no-comments-placeholder">Комментариев пока нет.</p>
+                                                                    {% endif %}
+                                                                </div>
+
+                                                                <!-- Форма добавления комментария -->
+                                                                <form id="commentForm-{{ task.id }}" class="mt-3">
+                                                                    <input type="hidden" name="task_id" value="{{ task.id }}">
+                                                                    <div class="form-group">
+                                                                        <label for="commentContent-{{ task.id }}">Добавить комментарий:</label>
+                                                                        <textarea class="form-control" id="commentContent-{{ task.id }}" name="content" rows="2" required></textarea>
+                                                                    </div>
+                                                                    <button type="button" class="btn btn-primary submit-comment" data-task-id="{{ task.id }}">Отправить</button>
+                                                                </form>
                                                             </div>
                                                         </div>
                                                     </div>
@@ -152,8 +177,8 @@
                                         {% endfor %}
                                     </div>
                                     <div class="card-footer text-center">
-                                        <button class="btn btn-sm btn-primary" data-toggle="modal" data-target="#createTaskModal">
-                                            <i class="fas fa-plus"></i> Создать задачу
+                                        <button class="btn btn-sm btn-warning create-task-btn" data-toggle="modal" data-target="#createTaskModal" data-status-id="5">
+                                            <i class="fas fa-plus mr-1"></i> Создать задачу
                                         </button>
                                     </div>
                                     <!-- Модальное окно создания задачи -->
@@ -162,14 +187,15 @@
                                             <div class="modal-content">
                                                 <div class="modal-header">
                                                     <h5 class="modal-title" id="createTaskModalLabel">Создать новую задачу</h5>
-                                                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                                    <button type="button" class="close" data-dismiss="modal" aria-label="Закрыть">
                                                         <span aria-hidden="true">&times;</span>
                                                     </button>
                                                 </div>
-                                                <form action="/create_task" method="POST">
+                                                <form action="{{ url_for('main_routes.create_task') }}" method="POST">
                                                     <div class="modal-body">
                                                         <input type="hidden" name="project_id" value="{{ selected_project.id }}">
                                                         <input type="hidden" name="status_id" value="5"> <!-- ID статуса "К выполнению" -->
+
                                                         <div class="form-group">
                                                             <label for="taskTitle">Название задачи</label>
                                                             <input type="text" class="form-control" id="taskTitle" name="title" required>
@@ -180,7 +206,11 @@
                                                         </div>
                                                         <div class="form-group">
                                                             <label for="taskPriority">Приоритет</label>
-                                                            <input type="number" class="form-control" id="taskPriority" name="priority" min="1" max="5" value="1">
+                                                            <select class="form-control" id="taskPriority" name="priority" required>
+                                                                <option value="1">Высокий</option>
+                                                                <option value="2">Средний</option>
+                                                                <option value="3">Низкий</option>
+                                                            </select>
                                                         </div>
                                                         <div class="form-group">
                                                             <label for="taskDeadline">Дедлайн</label>
@@ -189,8 +219,11 @@
                                                         <div class="form-group">
                                                             <label for="assignedUsers">Ответственные</label>
                                                             <select class="form-control select2" id="assignedUsers" name="assigned_user_ids[]" multiple="multiple" style="width: 100%;">
+                                                                <option></option> <!-- Placeholder option for Select2 -->
                                                                 {% for user in project_users %}
-                                                                <option value="{{ user.id }}">{{ user.full_name }}</option>
+                                                                <option value="{{ user.id }}" data-img-src="{{ url_for('static', filename=user.profile_picture or 'users/default_profile_picture.jpg') }}">
+                                                                    {{ user.full_name }}
+                                                                </option>
                                                                 {% endfor %}
                                                             </select>
                                                         </div>
@@ -209,10 +242,10 @@
                             <!-- In Progress Column -->
                             <div class="col-md-4">
                                 <div class="card shadow-sm" style="border-radius: 10px;">
-                                    <div class="card-header bg-warning text-dark text-center" style="border-radius: 10px 10px 0 0;">
+                                    <div class="card-header bg-primary text-white text-center" style="border-radius: 10px 10px 0 0;">
                                         <strong>В процессе</strong>
                                     </div>
-                                    <div class="card-body" style="max-height: 500px; overflow-y: auto;">
+                                    <div class="card-body custom-scroll-container" style="max-height: 500px; overflow-y: auto;">
                                         {% for task in selected_project.tasks if task.status.name == 'В процессе' %}
                                         <div class="card mb-3 shadow-sm">
                                             <div class="card-body">
@@ -261,8 +294,6 @@
                                                                                              alt="Фото профиля"
                                                                                              class="rounded-circle mb-3"
                                                                                              style="width: 100px; height: 100px; object-fit: cover;">
-                                                                                        <h5>{{ assigned_user.user.full_name }}</h5>
-                                                                                        <p><strong>Внутренний номер:</strong> {{ assigned_user.user.internal_id }}</p>
                                                                                         <p><strong>Email:</strong> {{ assigned_user.user.email }}</p>
                                                                                         <p><strong>Телефон:</strong> {{ assigned_user.user.phone_number }}</p>
                                                                                     </div>
@@ -288,7 +319,7 @@
                                                                     </div>
                                                                     {% endfor %}
                                                                     {% if not task.comments %}
-                                                                    <p class="text-muted text-center">Комментариев пока нет.</p>
+                                                                    <p class="text-muted text-center no-comments-placeholder">Комментариев пока нет.</p>
                                                                     {% endif %}
                                                                 </div>
 
@@ -311,6 +342,63 @@
                                         <p class="text-center text-muted">Нет задач</p>
                                         {% endfor %}
                                     </div>
+                                    <div class="card-footer text-center">
+                                        <button class="btn btn-sm btn-primary create-task-btn" data-toggle="modal" data-target="#createTaskModal" data-status-id="6">
+                                            <i class="fas fa-plus mr-1"></i> Создать задачу
+                                        </button>
+                                    </div>
+                                    <!-- Модальное окно создания задачи -->
+                                    <div class="modal fade" id="createTaskModal" tabindex="-1" role="dialog" aria-labelledby="createTaskModalLabel" aria-hidden="true">
+                                        <div class="modal-dialog" role="document">
+                                            <div class="modal-content">
+                                                <div class="modal-header">
+                                                    <h5 class="modal-title" id="createTaskModalLabel">Создать новую задачу</h5>
+                                                    <button type="button" class="close" data-dismiss="modal" aria-label="Закрыть">
+                                                        <span aria-hidden="true">&times;</span>
+                                                    </button>
+                                                </div>
+                                                <form action="{{ url_for('main_routes.create_task') }}" method="POST">
+                                                    <div class="modal-body">
+                                                        <input type="hidden" name="project_id" value="{{ selected_project.id }}">
+                                                        <input type="hidden" name="status_id" value="6"> <!-- ID статуса "К выполнению" -->
+
+                                                        <div class="form-group">
+                                                            <label for="taskTitle">Название задачи</label>
+                                                            <input type="text" class="form-control" id="taskTitle" name="title" required>
+                                                        </div>
+                                                        <div class="form-group">
+                                                            <label for="taskDescription">Описание</label>
+                                                            <textarea class="form-control" id="taskDescription" name="description" rows="3" required></textarea>
+                                                        </div>
+                                                        <div class="form-group">
+                                                            <label for="taskPriority">Приоритет</label>
+                                                            <select class="form-control" id="taskPriority" name="priority" required>
+                                                                <option value="1">Высокий</option>
+                                                                <option value="2">Средний</option>
+                                                                <option value="3">Низкий</option>
+                                                            </select>
+                                                        </div>
+                                                        <div class="form-group">
+                                                            <label for="taskDeadline">Дедлайн</label>
+                                                            <input type="date" class="form-control" id="taskDeadline" name="deadline">
+                                                        </div>
+                                                        <div class="form-group">
+                                                            <label for="assignedUsers">Ответственные</label>
+                                                            <select class="form-control select2" id="assignedUsers" name="assigned_user_ids[]" multiple="multiple" style="width: 100%;">
+                                                                {% for user in project_users %}
+                                                                <option value="{{ user.id }}">{{ user.full_name }}</option>
+                                                                {% endfor %}
+                                                            </select>
+                                                        </div>
+                                                    </div>
+                                                    <div class="modal-footer">
+                                                        <button type="button" class="btn btn-secondary" data-dismiss="modal">Отмена</button>
+                                                        <button type="submit" class="btn btn-primary">Создать</button>
+                                                    </div>
+                                                </form>
+                                            </div>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
 
@@ -320,7 +408,7 @@
                                     <div class="card-header bg-success text-white text-center" style="border-radius: 10px 10px 0 0;">
                                         <strong>Выполнено</strong>
                                     </div>
-                                    <div class="card-body" style="max-height: 500px; overflow-y: auto;">
+                                    <div class="card-body custom-scroll-container" style="max-height: 500px; overflow-y: auto;">
                                         {% for task in selected_project.tasks if task.status.name == 'Выполнено' %}
                                         <div class="card mb-3 shadow-sm">
                                             <div class="card-body">
@@ -369,8 +457,6 @@
                                                                                              alt="Фото профиля"
                                                                                              class="rounded-circle mb-3"
                                                                                              style="width: 100px; height: 100px; object-fit: cover;">
-                                                                                        <h5>{{ assigned_user.user.full_name }}</h5>
-                                                                                        <p><strong>Внутренний номер:</strong> {{ assigned_user.user.internal_id }}</p>
                                                                                         <p><strong>Email:</strong> {{ assigned_user.user.email }}</p>
                                                                                         <p><strong>Телефон:</strong> {{ assigned_user.user.phone_number }}</p>
                                                                                     </div>
@@ -396,7 +482,7 @@
                                                                     </div>
                                                                     {% endfor %}
                                                                     {% if not task.comments %}
-                                                                    <p class="text-muted text-center">Комментариев пока нет.</p>
+                                                                    <p class="text-muted text-center no-comments-placeholder">Комментариев пока нет.</p>
                                                                     {% endif %}
                                                                 </div>
 
@@ -418,6 +504,65 @@
                                         {% else %}
                                         <p class="text-center text-muted">Нет задач</p>
                                         {% endfor %}
+                                    </div>
+                                    <div class="card-footer text-center">
+                                        <button class="btn btn-sm btn-success create-task-btn" data-toggle="modal" data-target="#createTaskModal" data-status-id="7">
+                                            <i class="fas fa-plus mr-1"></i> Создать задачу
+                                        </button>
+                                    </div>
+                                    <div class="modal fade" id="createTaskModal" tabindex="-1" role="dialog" aria-labelledby="createTaskModalLabel" aria-hidden="true">
+                                        <div class="modal-dialog" role="document">
+                                            <div class="modal-content">
+                                                <div class="modal-header">
+                                                    <h5 class="modal-title" id="createTaskModalLabel">Создать новую задачу</h5>
+                                                    <button type="button" class="close" data-dismiss="modal" aria-label="Закрыть">
+                                                        <span aria-hidden="true">&times;</span>
+                                                    </button>
+                                                </div>
+                                                <form action="{{ url_for('main_routes.create_task') }}" method="POST">
+                                                    <div class="modal-body">
+                                                        <input type="hidden" name="project_id" value="{{ selected_project.id }}">
+                                                        <input type="hidden" name="status_id" value="7"> <!-- ID статуса "К выполнению" -->
+
+                                                        <div class="form-group">
+                                                            <label for="taskTitle">Название задачи</label>
+                                                            <input type="text" class="form-control" id="taskTitle" name="title" required>
+                                                        </div>
+                                                        <div class="form-group">
+                                                            <label for="taskDescription">Описание</label>
+                                                            <textarea class="form-control" id="taskDescription" name="description" rows="3" required></textarea>
+                                                        </div>
+                                                        <div class="form-group">
+                                                            <label for="taskPriority">Приоритет</label>
+                                                            <select class="form-control" id="taskPriority" name="priority" required>
+                                                                <option value="1">Высокий</option>
+                                                                <option value="2">Средний</option>
+                                                                <option value="3">Низкий</option>
+                                                            </select>
+                                                        </div>
+                                                        <div class="form-group">
+                                                            <label for="taskDeadline">Дедлайн</label>
+                                                            <input type="date" class="form-control" id="taskDeadline" name="deadline">
+                                                        </div>
+                                                        <div class="form-group">
+                                                            <label for="assignedUsers">Ответственные</label>
+                                                            <select class="form-control select2" id="assignedUsers" name="assigned_user_ids[]" multiple="multiple" style="width: 100%;">
+                                                                <option></option> <!-- Placeholder for Select2 -->
+                                                                {% for user in all_users %}
+                                                                <option value="{{ user.id }}" data-img-src="{{ url_for('static', filename=user.profile_picture or 'users/default_profile_picture.jpg') }}">
+                                                                    {{ user.full_name }}
+                                                                </option>
+                                                                {% endfor %}
+                                                            </select>
+                                                        </div>
+                                                    </div>
+                                                    <div class="modal-footer">
+                                                        <button type="button" class="btn btn-secondary" data-dismiss="modal">Отмена</button>
+                                                        <button type="submit" class="btn btn-primary">Создать</button>
+                                                    </div>
+                                                </form>
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -497,11 +642,56 @@
             });
         }
         $(document).ready(function() {
-            $('.select2').select2({
-                placeholder: "Выберите ответственных",
-                allowClear: true
+            $('#assignedUsers').select2({
+                placeholder: "Выберите ответственных...",
+                allowClear: true,
+                templateResult: formatUserOption, // Format dropdown options
+                templateSelection: formatUserSelection // Format selected options
             });
         });
+
+        $('.create-task-btn').on('click', function () {
+            const statusId = $(this).data('status-id');
+            $('#createTaskModal').find('input[name="status_id"]').val(statusId);
+        });
+
+
+        // Formatting dropdown options with user avatar and name
+        function formatUserOption(user) {
+            if (!user.id) {
+                return user.text; // Return placeholder text
+            }
+
+            // Extract image source and full name
+            var imgSrc = $(user.element).data('img-src');
+            var fullName = user.text;
+
+            var template = $(
+                `<div class="d-flex align-items-center">
+                    <img src="${imgSrc}" alt="${fullName}" class="rounded-circle mr-2" style="width: 30px; height: 30px; object-fit: cover;">
+                    <span>${fullName}</span>
+                </div>`
+            );
+            return template;
+        }
+
+        // Formatting selected option (with avatar)
+        function formatUserSelection(user) {
+            if (!user.id) {
+                return user.text;
+            }
+
+            var imgSrc = $(user.element).data('img-src');
+            var fullName = user.text;
+
+            var template = $(
+                `<div class="d-flex align-items-center">
+                    <img src="${imgSrc}" alt="${fullName}" class="rounded-circle mr-2" style="width: 20px; height: 20px; object-fit: cover;">
+                    <span>${fullName}</span>
+                </div>`
+            );
+            return template;
+        }
         // Обработчик отправки комментариев через AJAX
         $(document).on('click', '.submit-comment', function () {
             const taskId = $(this).data('task-id');
@@ -523,10 +713,14 @@
                 }),
                 success: function (response) {
                     if (response.success) {
-                        // Очистка поля ввода комментария
+                        // Clear the comment input field
                         form.find(`#commentContent-${taskId}`).val('');
 
-                        // Добавление нового комментария в чат
+                        // Remove the placeholder text if it exists
+                        const chatContainer = form.closest('.modal-body').find('.chat-container');
+                        chatContainer.find('.no-comments-placeholder').remove();
+
+                        // Add the new comment to the top of the chat
                         const commentHtml = `
                             <div class="d-flex align-items-start mb-3">
                                 <img src="${response.user_profile_picture}"
@@ -541,7 +735,7 @@
                                 </div>
                             </div>
                         `;
-                        form.closest('.modal-body').find('.chat-container').prepend(commentHtml);
+                        chatContainer.prepend(commentHtml);
                     } else {
                         console.error("Ошибка сервера:", response.message);
                         alert(response.message || 'Ошибка при добавлении комментария.');
@@ -560,6 +754,16 @@
             if (csrfToken) {
                 jqxhr.setRequestHeader('X-CSRF-Token', csrfToken);
             }
+        });
+    });
+    document.addEventListener('DOMContentLoaded', function () {
+        OverlayScrollbars(document.querySelectorAll('.custom-scroll-container'), {
+            scrollbars: {
+                visibility: 'auto',
+                autoHide: 'move',
+                autoHideDelay: 500
+            },
+            className: "os-theme-dark"
         });
     });
 </script>

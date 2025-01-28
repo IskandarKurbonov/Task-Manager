@@ -1,4 +1,5 @@
 /* Общие стили */
+
 body {
     font-family: 'Arial', sans-serif;
     margin: 0;
@@ -6,6 +7,7 @@ body {
     background-color: #f8f9fa;
     color: #212529;
     transition: background-color 0.3s, color 0.3s;
+    scroll-behavior: smooth;
 }
 
 .dark-mode {
@@ -147,4 +149,32 @@ body {
     .dropdown-menu {
         width: 100%;
     }
+}
+
+
+/* Стили для контейнера с кастомным скроллом */
+.custom-scroll-container {
+    height: 100vh;
+    overflow-y: auto;
+    scrollbar-width: thin; /* Для Firefox */
+    scrollbar-color: #007bff #f1f1f1; /* Цвета для трека и ползунка */
+}
+
+/* Стили для скролла */
+.custom-scroll-container::-webkit-scrollbar {
+    width: 8px; /* Ширина скролла */
+}
+
+.custom-scroll-container::-webkit-scrollbar-thumb {
+    background-color: #007bff; /* Цвет ползунка */
+    border-radius: 10px;
+}
+
+.custom-scroll-container::-webkit-scrollbar-thumb:hover {
+    background-color: #0056b3; /* Цвет ползунка при наведении */
+}
+
+.custom-scroll-container::-webkit-scrollbar-track {
+    background: #f1f1f1; /* Цвет трека */
+    border-radius: 10px;
 }

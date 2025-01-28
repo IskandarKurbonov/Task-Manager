@@ -759,39 +759,27 @@ def create_project():
 @login_required
 def create_task():
     try:
-        # Логирование данных для отладки
-        print(f"Форма: {request.form}")
-        print(f"Пользователь: {current_user.username}, Роль: {current_user.role.name}")
-
         # Получаем данные из формы
         title = request.form.get('title')
         description = request.form.get('description')
         project_id = request.form.get('project_id')
-        status_id = request.form.get('status_id')
+        status_id = request.form.get('status_id')  # ID статуса передается из формы
         priority = int(request.form.get('priority', 1))
         deadline = request.form.get('deadline')
-        assigned_user_ids = request.form.getlist('assigned_user_ids')
+        assigned_user_ids = request.form.getlist('assigned_user_ids')  # Список ID пользователей
 
-        # Проверяем, что обязательные поля заполнены
+        # Проверка обязательных полей
         if not title or not project_id or not status_id:
             flash('Заполните все обязательные поля!', 'danger')
             return redirect(url_for('main_routes.main', project_id=project_id))
 
         # Проверяем существование проекта
         project = Project.query.get_or_404(project_id)
-        print(f"Проект найден: {project.name}")
 
-        # Проверяем права доступа
-        if current_user.role.name == 'manager':
-            # Менеджер может создавать задачи только в проектах, где он является ответственным
-            if project.manager_id != current_user.id:
-                flash('Вы можете создавать задачи только в проектах, где вы являетесь ответственным.', 'danger')
-                return redirect(url_for('main_routes.main', project_id=project_id))
-
-        # Проверяем статус задачи
+        # Проверяем существование статуса
         status = TaskStatus.query.get(status_id)
         if not status:
-            flash('Некорректный статус задачи!', 'danger')
+            flash('Указанный статус не найден!', 'danger')
             return redirect(url_for('main_routes.main', project_id=project_id))
 
         # Создаем новую задачу
@@ -799,27 +787,26 @@ def create_task():
             title=title,
             description=description,
             project_id=project_id,
-            status_id=status_id,
+            status_id=status_id,  # Устанавливаем переданный статус
             priority=priority,
             deadline=datetime.strptime(deadline, '%Y-%m-%d') if deadline else None
         )
         db.session.add(new_task)
-        db.session.flush()  # Сохраняем задачу в базе для получения ID
+        db.session.flush()  # Сохраняем задачу для получения ID
 
         # Привязываем пользователей к задаче
         for user_id in assigned_user_ids:
             task_user = TaskUser(task_id=new_task.id, user_id=user_id)
             db.session.add(task_user)
 
-        # Сохраняем изменения в базе данных
+        # Сохраняем изменения
         db.session.commit()
         flash('Задача успешно создана!', 'success')
         return redirect(url_for('main_routes.main', project_id=project_id))
 
     except Exception as e:
-        # В случае ошибки откатываем изменения и выводим сообщение
+        # Откат изменений в случае ошибки
         db.session.rollback()
-        print(f"Ошибка при создании задачи: {str(e)}")
         flash(f'Ошибка при создании задачи: {str(e)}', 'danger')
         return redirect(url_for('main_routes.main', project_id=project_id))
 
